@@ -211,115 +211,115 @@
   position: relative;
   display: block;
   width: 100%;
+  max-width: 200px;
   height: auto;
+  margin: 0 auto;
   overflow: visible;
 }
 
-.fv-building__floor {
-  stroke: rgba(255, 255, 255, 0.16);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-dasharray: 4 6;
-  animation: fv-floor 2.6s linear infinite;
+/* Plataforma bajo el desarrollador */
+.fv-pad {
+  fill: var(--fv-soft);
+  opacity: 0.55;
+  animation: fv-pad 4s ease-in-out infinite;
 }
 
-@keyframes fv-floor {
-  to { stroke-dashoffset: -20; }
+@keyframes fv-pad {
+  0%, 100% { opacity: 0.35; transform: scaleX(0.94); }
+  50% { opacity: 0.7; transform: scaleX(1); }
 }
 
-.fv-dev {
-  animation: fv-dev-bob 3s ease-in-out infinite;
-  animation-delay: var(--d, 0s);
-  transform-box: fill-box;
+/* Respiración suave del personaje (efecto orgánico) */
+.fv-thinker {
+  transform-origin: 50% 100%;
+  animation: fv-breathe 5.5s ease-in-out infinite;
 }
 
-@keyframes fv-dev-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+@keyframes fv-breathe {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2.5px) rotate(-0.6deg); }
 }
 
-.fv-dev__head {
+.fv-head {
   fill: var(--fv-accent);
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
-.fv-dev__body {
+.fv-hair {
+  fill: rgba(255, 255, 255, 0.22);
+}
+
+.fv-arm {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.55);
-  stroke-width: 2;
+  stroke: var(--fv-accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+
+.fv-torso {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 7;
   stroke-linecap: round;
 }
 
-.fv-dev__screen {
-  fill: rgba(8, 10, 14, 0.9);
+.fv-legs {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+/* Laptop */
+.fv-laptop rect {
+  fill: rgba(8, 10, 14, 0.92);
   stroke: var(--fv-accent);
-  stroke-width: 1.4;
-  animation: fv-screen 2.4s ease-in-out infinite;
-  animation-delay: var(--d, 0s);
+  stroke-width: 1.6;
+  animation: fv-screen 3s ease-in-out infinite;
 }
 
 @keyframes fv-screen {
-  0%, 100% { opacity: 0.55; }
+  0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
 
-.fv-dev__code {
+.fv-laptop__base {
   fill: none;
   stroke: var(--fv-accent);
-  stroke-width: 1.5;
+  stroke-width: 2.4;
   stroke-linecap: round;
-  stroke-dasharray: 6 24;
-  animation: fv-type 1.8s linear infinite;
-  animation-delay: var(--d, 0s);
+  opacity: 0.8;
+}
+
+.fv-laptop__code {
+  fill: none;
+  stroke: var(--fv-accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 6 26;
+  animation: fv-type 2s linear infinite;
 }
 
 @keyframes fv-type {
-  to { stroke-dashoffset: -30; }
+  to { stroke-dashoffset: -32; }
 }
 
-.fv-dev__arm {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.4);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  transform-origin: center;
-  animation: fv-arm 0.55s ease-in-out infinite alternate;
-  animation-delay: var(--d, 0s);
-}
-
-@keyframes fv-arm {
-  from { transform: translateY(0); }
-  to { transform: translateY(1.6px); }
-}
-
-.fv-building__bubble rect,
-.fv-building__bubble path {
-  fill: var(--fv-soft);
-  stroke: var(--fv-accent);
-  stroke-width: 1.2;
-}
-
-.fv-building__bubble {
-  animation: fv-bubble 4.6s ease-in-out infinite;
-}
-
-@keyframes fv-bubble {
-  0%, 100% { opacity: 0.45; transform: translate(176px, 16px); }
-  50% { opacity: 1; transform: translate(176px, 11px); }
-}
-
-.fv-dot {
+/* Nubes de pensamiento que suben */
+.fv-think {
   fill: var(--fv-accent);
-  animation: fv-dot 1.4s ease-in-out infinite;
+  opacity: 0.5;
+  animation: fv-think 3.4s ease-in-out infinite;
 }
 
-.fv-dot.d1 { animation-delay: 0s; }
-.fv-dot.d2 { animation-delay: 0.18s; }
-.fv-dot.d3 { animation-delay: 0.36s; }
+.fv-think.d1 { animation-delay: 0s; }
+.fv-think.d2 { animation-delay: 0.45s; }
+.fv-think.d3 { animation-delay: 0.9s; }
 
-@keyframes fv-dot {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 1; }
+@keyframes fv-think {
+  0% { opacity: 0.15; transform: translateY(4px) scale(0.85); }
+  50% { opacity: 0.85; transform: translateY(-2px) scale(1); }
+  100% { opacity: 0.15; transform: translateY(-6px) scale(0.85); }
 }
 
 .fv-building__text {

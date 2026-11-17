@@ -5,31 +5,34 @@
 
 import { escape } from "./ui.js";
 
-const dev = (x, y, delay) => `
-  <g class="fv-dev" style="--d:${delay}s" transform="translate(${x} ${y})">
-    <circle class="fv-dev__head" cx="0" cy="-14" r="7" />
-    <path class="fv-dev__body" d="M-10 4c0-6 4.5-10 10-10s10 4 10 10" />
-    <rect class="fv-dev__screen" x="-15" y="3" width="30" height="13" rx="2.5" />
-    <path class="fv-dev__code" d="M-10 7h7M-10 11h12" />
-    <path class="fv-dev__arm" d="M-10-2l-4 7M10-2l4 7" />
-  </g>`;
-
 export function building(message) {
   return `
     <div class="fv-building">
       <div class="fv-building__scene" aria-hidden="true">
         <span class="fv-building__glow"></span>
-        <svg class="fv-building__svg" viewBox="0 0 240 92" role="presentation">
-          <path class="fv-building__floor" d="M12 86h216" />
-          ${dev(58, 66, 0)}
-          ${dev(120, 62, 0.35)}
-          ${dev(182, 66, 0.7)}
-          <g class="fv-building__bubble" transform="translate(176 16)">
-            <rect x="-26" y="-11" width="52" height="20" rx="10" />
-            <path d="M-6 9l-4 6 10-6z" />
-            <circle class="fv-dot d1" cx="-10" cy="-1" r="2" />
-            <circle class="fv-dot d2" cx="0" cy="-1" r="2" />
-            <circle class="fv-dot d3" cx="10" cy="-1" r="2" />
+        <svg class="fv-building__svg" viewBox="0 0 200 150" role="presentation">
+          <ellipse class="fv-pad" cx="100" cy="138" rx="62" ry="7" />
+          <g class="fv-thinker">
+            <!-- pensamiento flotante -->
+            <circle class="fv-think d1" cx="132" cy="26" r="4" />
+            <circle class="fv-think d2" cx="146" cy="16" r="5.5" />
+            <circle class="fv-think d3" cx="164" cy="8" r="7" />
+            <!-- cabeza apoyada en la mano -->
+            <circle class="fv-head" cx="86" cy="54" r="17" />
+            <path class="fv-hair" d="M69 50c0-11 8-18 17-18s17 7 17 18c-4-6-9-9-17-9s-13 3-17 9z" />
+            <!-- brazo que sostiene la barbilla -->
+            <path class="fv-arm" d="M74 66c-8 6-12 16-6 22 5 5 14 3 17-3" />
+            <!-- torso sentado -->
+            <path class="fv-torso" d="M62 138c0-26 10-46 26-46s26 20 26 46" />
+            <!-- piernas dobladas -->
+            <path class="fv-legs" d="M78 138c2-16 8-22 22-22h26" />
+            <path class="fv-legs" d="M104 138c6-14 14-18 28-18" />
+            <!-- laptop al frente -->
+            <g class="fv-laptop">
+              <rect x="118" y="96" width="46" height="30" rx="3" />
+              <path class="fv-laptop__base" d="M110 126h62" />
+              <path class="fv-laptop__code" d="M126 105h20M126 111h30M126 117h14" />
+            </g>
           </g>
         </svg>
       </div>

@@ -28,7 +28,7 @@ export default {
 
       <div class="fv-body com-body">
         ${sectionTitle("En construcción")}
-        ${building("Un equipo de desarrollo está construyendo esta sección. Lo que ves se actualiza cada semana.")}
+        ${building("Nuestro equipo de programadores está trabajando en esto. Próximamente disponible.")}
       </div>
     `;
 
