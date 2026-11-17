@@ -1,5 +1,5 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v31";
+const CACHE_VERSION = "v32";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -22,6 +22,10 @@ const APP_SHELL = [
   "./features/shared/content.js",
   "./features/shared/building.js",
   "./features/shared/feature-view.css",
+  "./features/mototaxis/index.js",
+  "./features/mototaxis/content.js",
+  "./features/mototaxis/map.js",
+  "./features/mototaxis/view.css",
   "./assets/images/comercios-1.jpg",
   "./assets/images/comercios-2.jpg",
   "./assets/images/comercios-3.jpg",

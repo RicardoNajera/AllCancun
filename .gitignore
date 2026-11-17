@@ -11,6 +11,7 @@ node_modules/
 # Entorno
 .env
 .env.local
+config.local.js
 
 # Editores
 .vscode/

@@ -4,6 +4,17 @@
  */
 
 import { content } from "./content.js";
+import {
+  CANCUN,
+  STYLE_URL,
+  loadMapLibre,
+  getToken,
+  saveToken,
+  searchPlaces,
+  fetchRoute,
+  formatDistance,
+  formatDuration,
+} from "./map.js";
 
 const motoIcon = `
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -74,19 +85,36 @@ export default {
         </header>
 
         <section class="mt-map" aria-label="Mapa de la zona">
+          <div class="mt-map__canvas" id="mt-map-canvas" role="application"
+               aria-label="Mapa interactivo de Cancún"></div>
           <span class="mt-map__veil" aria-hidden="true"></span>
-          <svg class="mt-map__grid" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M0 30h100M0 62h100M22 0v100M58 0v100M82 0v100" />
-          </svg>
-          <svg class="mt-map__route" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path class="mt-map__line" d="M14 78C30 74 34 52 48 46s26 4 38-22" />
-          </svg>
-          <span class="mt-map__pin mt-map__pin--from" aria-hidden="true"></span>
-          <span class="mt-map__pin mt-map__pin--to" aria-hidden="true"></span>
-          <span class="mt-map__eta">
-            <span class="mt-map__eta-dot" aria-hidden="true"></span>
-            Mototaxis cerca de ti
+          <span class="mt-map__status" data-map-status>
+            <span class="mt-map__status-dot" aria-hidden="true"></span>
+            <span data-map-status-text>Cargando mapa…</span>
           </span>
+          <button type="button" class="mt-map__locate" data-action="locate" aria-label="Usar mi ubicación">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.2" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <circle cx="12" cy="12" r="8" />
+            </svg>
+          </button>
+          <div class="mt-token" data-token-panel hidden>
+            <p class="mt-token__text">
+              Pega tu token de Mapbox para buscar direcciones y trazar la ruta.
+              El mapa ya es real (OpenFreeMap, sin API key).
+            </p>
+            <form class="mt-token__form" data-token-form>
+              <input class="mt-token__input" type="password" name="token"
+                     placeholder="pk.eyJ1…" autocomplete="off" spellcheck="false"
+                     aria-label="Token de Mapbox" />
+              <button class="mt-token__save" type="submit">Guardar</button>
+            </form>
+            <p class="mt-token__hint">
+              Solo se guarda en este navegador (localStorage).
+            </p>
+          </div>
         </section>
 
         <section class="mt-sheet">
@@ -94,20 +122,46 @@ export default {
 
           <h1 class="mt-sheet__title">¿A dónde vamos?</h1>
 
-          <div class="mt-search">
-            <span class="mt-search__icon" aria-hidden="true">${pinIcon}</span>
-            <input class="mt-search__input" type="text" inputmode="text"
-                   placeholder="Ingresa tu destino"
-                   aria-label="Destino" autocomplete="off" />
-            <span class="mt-search__badge">Ahora</span>
+          <div class="mt-origin" data-origin-row>
+            <span class="mt-origin__dot" aria-hidden="true"></span>
+            <span class="mt-origin__label">Tu ubicación</span>
+            <span class="mt-origin__value" data-origin-text>Detectando…</span>
           </div>
 
-          <ul class="mt-quick" aria-label="Destinos frecuentes">
+          <div class="mt-search">
+            <span class="mt-search__icon" aria-hidden="true">${pinIcon}</span>
+            <input class="mt-search__input" type="text" inputmode="search"
+                   placeholder="¿A dónde vamos?"
+                   aria-label="Destino" autocomplete="off"
+                   data-search-input />
+            <span class="mt-search__spinner" data-search-spinner hidden aria-hidden="true"></span>
+          </div>
+
+          <p class="mt-error" data-error hidden></p>
+
+          <ul class="mt-results" data-results hidden></ul>
+
+          <ul class="mt-quick" aria-label="Destinos frecuentes" data-quick>
             <li><button type="button" class="mt-quick__item">Centro</button></li>
             <li><button type="button" class="mt-quick__item">Playa Delfines</button></li>
             <li><button type="button" class="mt-quick__item">Mercado 28</button></li>
             <li><button type="button" class="mt-quick__item">Terminal ADO</button></li>
           </ul>
+
+          <div class="mt-trip" data-trip hidden>
+            <div class="mt-trip__metric">
+              <span class="mt-trip__label">Distancia</span>
+              <strong data-trip-distance>—</strong>
+            </div>
+            <div class="mt-trip__metric">
+              <span class="mt-trip__label">Tiempo</span>
+              <strong data-trip-duration>—</strong>
+            </div>
+            <div class="mt-trip__metric">
+              <span class="mt-trip__label">Mototaxi</span>
+              <strong data-trip-eta>—</strong>
+            </div>
+          </div>
 
           <h2 class="mt-sheet__sub">Elige tu mototaxi</h2>
 
@@ -157,43 +211,332 @@ export default {
     `;
 
     const onMount = (root) => {
-      const priceEl = root.querySelector("[data-price]");
-      const input = root.querySelector(".mt-search__input");
-      const cta = root.querySelector(".mt-cta");
+      const $ = (sel) => root.querySelector(sel);
 
-      const select = (btn) => {
-        root.querySelectorAll(".mt-service").forEach((el) => {
-          const active = el === btn;
-          el.classList.toggle("is-active", active);
-          el.setAttribute("aria-pressed", active ? "true" : "false");
+      const priceEl = $("[data-price]");
+      const input = $("[data-search-input]");
+      const cta = $(".mt-cta");
+      const resultsEl = $("[data-results]");
+      const errorEl = $("[data-error]");
+      const spinner = $("[data-search-spinner]");
+      const tripEl = $("[data-trip]");
+      const tokenPanel = $("[data-token-panel]");
+      const statusText = $("[data-map-status-text]");
+      const originText = $("[data-origin-text]");
+      const quickEl = $("[data-quick]");
+
+      let token = getToken();
+      let map = null;
+      let markers = [];
+      let routeData = null;
+      let origin = { ...CANCUN };
+      let destination = null;
+      let searchTimer = 0;
+      let searchController = null;
+      let destroyed = false;
+
+      const setError = (msg) => {
+        if (!errorEl) return;
+        errorEl.textContent = msg || "";
+        errorEl.hidden = !msg;
+      };
+
+      const setStatus = (msg) => {
+        if (statusText) statusText.textContent = msg;
+      };
+
+      const setTokenState = (hasToken) => {
+        if (tokenPanel) tokenPanel.hidden = hasToken;
+      };
+
+      /* ---------- Mapa ---------- */
+      const setMarker = (kind, point, label) => {
+        if (!map || !window.maplibregl) return null;
+        const el = document.createElement("span");
+        el.className = `mt-pin mt-pin--${kind}`;
+        const marker = new window.maplibregl.Marker({ element: el, anchor: "center" })
+          .setLngLat([point.lng, point.lat]);
+        if (label) marker.setPopup(new window.maplibregl.Popup({ offset: 16 }).setText(label));
+        marker.addTo(map);
+        markers.push({ kind, marker });
+        return marker;
+      };
+
+      const clearMarkers = (kind) => {
+        markers = markers.filter((entry) => {
+          if (kind && entry.kind !== kind) return true;
+          entry.marker.remove();
+          return false;
         });
-        const price = btn.querySelector(".mt-service__price")?.textContent || "$35";
-        if (priceEl) priceEl.textContent = price;
-        btn.animate?.(
-          [{ transform: "scale(1)" }, { transform: "scale(0.985)" }, { transform: "scale(1)" }],
-          { duration: 240, easing: "ease-out" }
+      };
+
+      const drawRoute = (geometry) => {
+        if (!map) return;
+        const source = map.getSource("mt-route");
+        const data = geometry
+          ? { type: "Feature", properties: {}, geometry }
+          : { type: "FeatureCollection", features: [] };
+        source?.setData(data);
+      };
+
+      const fitRoute = (geometry) => {
+        if (!map || !geometry?.coordinates?.length) return;
+        const bounds = geometry.coordinates.reduce(
+          (acc, coord) => acc.extend(coord),
+          new window.maplibregl.LngLatBounds(geometry.coordinates[0], geometry.coordinates[0])
+        );
+        map.fitBounds(bounds, {
+          padding: { top: 60, bottom: 60, left: 50, right: 50 },
+          maxZoom: 15.5,
+          duration: 700,
+        });
+      const initMap = async () => {
+        try {
+          const maplibregl = await loadMapLibre();
+          if (destroyed) return;
+
+          map = new maplibregl.Map({
+            container: "mt-map-canvas",
+            style: STYLE_URL,
+            center: [CANCUN.lng, CANCUN.lat],
+            zoom: 12.2,
+            attributionControl: false,
+            pitchWithRotate: false,
+            dragRotate: false,
+          });
+
+          map.on("load", () => {
+            map.addSource("mt-route", {
+              type: "geojson",
+              data: { type: "FeatureCollection", features: [] },
+            });
+            map.addLayer({
+              id: "mt-route-casing",
+              type: "line",
+              source: "mt-route",
+              layout: { "line-cap": "round", "line-join": "round" },
+              paint: { "line-color": "#0b0e13", "line-width": 8, "line-opacity": 0.55 },
+            });
+            map.addLayer({
+              id: "mt-route-line",
+              type: "line",
+              source: "mt-route",
+              layout: { "line-cap": "round", "line-join": "round" },
+              paint: { "line-color": "#4fa8ff", "line-width": 4.5 },
+            });
+            setStatus("Mapa en vivo · OpenFreeMap");
+          });
+
+          map.on("error", () => setStatus("Mapa con problemas de conexión"));
+          setMarker("origin", origin);
+        } catch {
+          setStatus("No se pudo cargar el mapa");
+          setError("El mapa no cargó. Revisa tu conexión e intenta de nuevo.");
+        }
+      };
+
+      /* ---------- Ubicación ---------- */
+      const detectLocation = () => {
+        if (!navigator.geolocation) {
+          originText.textContent = "Ubicación no disponible";
+          setError("Tu navegador no permite geolocalización. Escribe tu destino igual.");
+          return;
+        }
+        originText.textContent = "Detectando…";
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { longitude: lng, latitude: lat } = pos.coords;
+            origin = { lng, lat };
+            clearMarkers("origin");
+            setMarker("origin", origin, "Tu ubicación");
+            map?.flyTo({ center: [lng, lat], zoom: 14.5, duration: 900 });
+            originText.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            setError("");
+            if (destination) planTrip();
+          },
+          () => {
+            originText.textContent = "Cancún centro (por defecto)";
+            setError("No leímos tu ubicación. Usamos el centro de Cancún como origen.");
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
         );
       };
 
+      /* ---------- Ruta ---------- */
+      const priceForDistance = (meters) => {
+        const km = Math.max(0.5, meters / 1000);
+        return `$${Math.round(20 + km * 12)}`;
+      };
+
+      const paintTrip = () => {
+        if (!tripEl || !routeData) return;
+        tripEl.hidden = false;
+        $("[data-trip-distance]").textContent = formatDistance(routeData.distance);
+        $("[data-trip-duration]").textContent = formatDuration(routeData.duration);
+        $("[data-trip-eta]").textContent = "+3 min";
+        if (priceEl) priceEl.textContent = priceForDistance(routeData.distance);
+      };
+
+      const planTrip = async () => {
+        if (!destination) return;
+        if (!token) {
+          setTokenState(false);
+          setError("Agrega tu token de Mapbox para calcular la ruta.");
+          return;
+        }
+        try {
+          setStatus("Calculando ruta…");
+          routeData = await fetchRoute(origin, destination.center, token);
+          if (destroyed) return;
+          drawRoute(routeData.geometry);
+          fitRoute(routeData.geometry);
+          paintTrip();
+          setStatus(destination.name);
+          setError("");
+        } catch (err) {
+          if (err.message === "token") {
+            setTokenState(false);
+            setError("El token de Mapbox no es válido o expiró.");
+          } else {
+            setError("No pudimos trazar la ruta. Prueba con otra dirección.");
+          }
+          setStatus("Ruta no disponible");
+        }
+      };
+
+
+      };
+
+      /* ---------- Buscador ---------- */
+      const renderResults = (places) => {
+        if (!resultsEl) return;
+        if (!places.length) {
+          resultsEl.hidden = true;
+          resultsEl.innerHTML = "";
+          return;
+        }
+        resultsEl.innerHTML = places
+          .map(
+            (place, index) => `
+            <li>
+              <button type="button" class="mt-result" data-result="${index}">
+                <span class="mt-result__icon" aria-hidden="true">${pinIcon}</span>
+                <span class="mt-result__body">
+                  <span class="mt-result__name"></span>
+                  <span class="mt-result__address"></span>
+                </span>
+              </button>
+            </li>`
+          )
+          .join("");
+        resultsEl.hidden = false;
+
+        resultsEl.querySelectorAll("[data-result]").forEach((btn) => {
+          const place = places[Number(btn.dataset.result)];
+          btn.querySelector(".mt-result__name").textContent = place.name;
+          btn.querySelector(".mt-result__address").textContent = place.address;
+          btn.addEventListener("click", () => chooseDestination(place));
+        });
+      };
+
+      const chooseDestination = (place) => {
+        destination = place;
+        clearMarkers("destination");
+        setMarker("destination", place.center, place.name);
+        if (input) input.value = place.name;
+        if (resultsEl) {
+          resultsEl.hidden = true;
+          resultsEl.innerHTML = "";
+        }
+        if (quickEl) quickEl.hidden = true;
+        setError("");
+        planTrip();
+      };
+
+      const runSearch = async (query) => {
+        const text = String(query || "").trim();
+        if (text.length < 3) {
+          renderResults([]);
+          return;
+        }
+        if (!token) {
+          setTokenState(false);
+          setError("Para buscar direcciones necesitas tu token de Mapbox.");
+          return;
+        }
+        searchController?.abort();
+        searchController = new AbortController();
+        if (spinner) spinner.hidden = false;
+        try {
+          const places = await searchPlaces(text, token, { near: origin });
+          if (destroyed) return;
+          renderResults(places);
+          setError(places.length ? "" : "Sin resultados. Intenta con otra dirección.");
+        } catch (err) {
+          if (err?.name === "AbortError") return;
+          if (err?.message === "token") {
+            setTokenState(false);
+            setError("El token de Mapbox no es válido o expiró.");
+          } else {
+            setError("No pudimos buscar. Revisa tu conexión.");
+          }
+        } finally {
+          if (spinner) spinner.hidden = true;
+        }
+      };
+
+      const onInput = () => {
+        clearTimeout(searchTimer);
+        const value = input.value;
+        searchTimer = setTimeout(() => runSearch(value), 350);
+      };
+
+      /* ---------- Token ---------- */
+      const tokenForm = $("[data-token-form]");
+
+      const onTokenSubmit = (event) => {
+        event.preventDefault();
+        const value = new FormData(tokenForm).get("token");
+        if (!String(value || "").trim()) return;
+        token = String(value).trim();
+        saveToken(token);
+        setTokenState(true);
+        setError("");
+        if (destination) planTrip();
+        else if (input && input.value.trim().length >= 3) runSearch(input.value);
+      };
+
+      /* ---------- Servicios / CTA ---------- */
       const onClick = (event) => {
         const btn = event.target.closest(".mt-service");
         if (btn) {
-          select(btn);
+          root.querySelectorAll(".mt-service").forEach((el) => {
+            const active = el === btn;
+            el.classList.toggle("is-active", active);
+            el.setAttribute("aria-pressed", active ? "true" : "false");
+          });
           return;
         }
         const quick = event.target.closest(".mt-quick__item");
         if (quick && input) {
           input.value = quick.textContent.trim();
           input.focus({ preventScroll: true });
+          runSearch(input.value);
         }
       };
 
       const onRequest = () => {
         if (!cta || cta.classList.contains("is-loading")) return;
+        if (!destination) {
+          setError("Elige primero a dónde quieres ir.");
+          input?.focus();
+          return;
+        }
         const label = cta.querySelector("span");
         cta.classList.add("is-loading");
         label.textContent = "Buscando tu mototaxi";
         setTimeout(() => {
+          if (destroyed) return;
           cta.classList.remove("is-loading");
           cta.classList.add("is-done");
           label.textContent = "¡Mototaxi asignado!";
@@ -201,12 +544,33 @@ export default {
         }, 1400);
       };
 
+      const onLocate = () => detectLocation();
+      const locateBtn = root.querySelector('[data-action="locate"]');
+
+      /* ---------- Arranque ---------- */
+      setTokenState(Boolean(token));
       root.addEventListener("click", onClick);
+      input?.addEventListener("input", onInput);
       cta?.addEventListener("click", onRequest);
+      locateBtn?.addEventListener("click", onLocate);
+      tokenForm?.addEventListener("submit", onTokenSubmit);
+
+      initMap();
+      detectLocation();
 
       return () => {
+        destroyed = true;
+        clearTimeout(searchTimer);
+        searchController?.abort();
         root.removeEventListener("click", onClick);
+        input?.removeEventListener("input", onInput);
         cta?.removeEventListener("click", onRequest);
+        locateBtn?.removeEventListener("click", onLocate);
+        tokenForm?.removeEventListener("submit", onTokenSubmit);
+        markers.forEach((entry) => entry.marker.remove());
+        markers = [];
+        map?.remove();
+        map = null;
       };
     };
 
