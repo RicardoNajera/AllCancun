@@ -70,51 +70,27 @@ export default {
   render({ category }) {
     const html = `
       <div class="fv-body mt-body mt-app">
-        <header class="mt-top">
-          <button type="button" class="mt-top__back" data-action="back" aria-label="Volver al inicio">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        <section class="mt-map" aria-label="Mapa de la zona">
+          <div class="mt-map__canvas" id="mt-map-canvas" role="application"
+               aria-label="Mapa interactivo de Cancún"></div>
+
+          <button type="button" class="mt-fab mt-fab--back" data-action="back"
+                  aria-label="Volver al inicio">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M15 18l-6-6 6-6" />
             </svg>
           </button>
-          <div class="mt-top__title">
-            <span>All Cancún</span>
-            <strong>Mototaxi</strong>
-          </div>
-          <span class="mt-top__avatar" aria-hidden="true">R</span>
-        </header>
 
-        <section class="mt-map" aria-label="Mapa de la zona">
-          <div class="mt-map__canvas" id="mt-map-canvas" role="application"
-               aria-label="Mapa interactivo de Cancún"></div>
-          <span class="mt-map__veil" aria-hidden="true"></span>
-          <span class="mt-map__status" data-map-status>
-            <span class="mt-map__status-dot" aria-hidden="true"></span>
-            <span data-map-status-text>Cargando mapa…</span>
-          </span>
-          <button type="button" class="mt-map__locate" data-action="locate" aria-label="Usar mi ubicación">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          <button type="button" class="mt-fab mt-fab--locate" data-action="locate"
+                  aria-label="Centrar en mi ubicación">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2" />
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-              <circle cx="12" cy="12" r="8" />
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21" />
+              <circle cx="12" cy="12" r="7.6" />
             </svg>
           </button>
-          <div class="mt-token" data-token-panel hidden>
-            <p class="mt-token__text">
-              Pega tu token de Mapbox para buscar direcciones y trazar la ruta.
-              El mapa ya es real (OpenFreeMap, sin API key).
-            </p>
-            <form class="mt-token__form" data-token-form>
-              <input class="mt-token__input" type="password" name="token"
-                     placeholder="pk.eyJ1…" autocomplete="off" spellcheck="false"
-                     aria-label="Token de Mapbox" />
-              <button class="mt-token__save" type="submit">Guardar</button>
-            </form>
-            <p class="mt-token__hint">
-              Solo se guarda en este navegador (localStorage).
-            </p>
-          </div>
         </section>
 
         <section class="mt-sheet">
@@ -214,8 +190,6 @@ export default {
       const errorEl = $("[data-error]");
       const spinner = $("[data-search-spinner]");
       const tripEl = $("[data-trip]");
-      const tokenPanel = $("[data-token-panel]");
-      const statusText = $("[data-map-status-text]");
       const quickEl = $("[data-quick]");
 
       let token = getToken();
@@ -233,15 +207,6 @@ export default {
         errorEl.textContent = msg || "";
         errorEl.hidden = !msg;
       };
-
-      const setStatus = (msg) => {
-        if (statusText) statusText.textContent = msg;
-      };
-
-      const setTokenState = (hasToken) => {
-        if (tokenPanel) tokenPanel.hidden = hasToken;
-      };
-
       /* ---------- Mapa ---------- */
       const setMarker = (kind, point, label) => {
         if (!map || !window.maplibregl) return null;
@@ -329,7 +294,6 @@ export default {
 
           map.on("load", () => {
             ensureRouteLayers();
-            setStatus("Mapa en vivo · OpenFreeMap");
           });
 
           // Si el estilo tarda o falla, dejamos las capas listas igual
@@ -340,7 +304,6 @@ export default {
 
           setMarker("origin", origin);
         } catch {
-          setStatus("No se pudo cargar el mapa");
           setError("El mapa no cargó. Revisa tu conexión e intenta de nuevo.");
         }
       };
@@ -386,27 +349,22 @@ export default {
       const planTrip = async () => {
         if (!destination) return;
         if (!token) {
-          setTokenState(false);
           setError("Agrega tu token de Mapbox para calcular la ruta.");
           return;
         }
         try {
-          setStatus("Calculando ruta…");
           routeData = await fetchRoute(origin, destination.center, token);
           if (destroyed) return;
           drawRoute(routeData.geometry);
           fitRoute(routeData.geometry);
           paintTrip();
-          setStatus(destination.name);
           setError("");
         } catch (err) {
           if (err.message === "token") {
-            setTokenState(false);
             setError("El token de Mapbox no es válido o expiró.");
           } else {
             setError("No pudimos trazar la ruta. Prueba con otra dirección.");
           }
-          setStatus("Ruta no disponible");
         }
       };
 
@@ -466,7 +424,6 @@ export default {
           return;
         }
         if (!token) {
-          setTokenState(false);
           setError("Para buscar direcciones necesitas tu token de Mapbox.");
           return;
         }
@@ -484,7 +441,6 @@ export default {
         } catch (err) {
           if (err?.name === "AbortError") return;
           if (err?.message === "token") {
-            setTokenState(false);
             setError("El token de Mapbox no es válido o expiró.");
           } else {
             setError("No pudimos buscar. Revisa tu conexión.");
@@ -498,21 +454,6 @@ export default {
         clearTimeout(searchTimer);
         const value = input.value;
         searchTimer = setTimeout(() => runSearch(value), 350);
-      };
-
-      /* ---------- Token ---------- */
-      const tokenForm = $("[data-token-form]");
-
-      const onTokenSubmit = (event) => {
-        event.preventDefault();
-        const value = new FormData(tokenForm).get("token");
-        if (!String(value || "").trim()) return;
-        token = String(value).trim();
-        saveToken(token);
-        setTokenState(true);
-        setError("");
-        if (destination) planTrip();
-        else if (input && input.value.trim().length >= 3) runSearch(input.value);
       };
 
       /* ---------- Servicios / CTA ---------- */
@@ -553,6 +494,7 @@ export default {
         }, 1400);
       };
 
+      /* ---------- Botón de mapa: centrar en mi ubicación ---------- */
       const onLocate = () => detectLocation();
       const locateBtn = root.querySelector('[data-action="locate"]');
 
@@ -570,13 +512,11 @@ export default {
       };
 
       /* ---------- Arranque ---------- */
-      setTokenState(Boolean(token));
       root.addEventListener("click", onClick);
       input?.addEventListener("input", onInput);
       input?.addEventListener("focus", onFocusSearch);
       cta?.addEventListener("click", onRequest);
       locateBtn?.addEventListener("click", onLocate);
-      tokenForm?.addEventListener("submit", onTokenSubmit);
 
       initMap();
       detectLocation();
@@ -590,7 +530,6 @@ export default {
         input?.removeEventListener("focus", onFocusSearch);
         cta?.removeEventListener("click", onRequest);
         locateBtn?.removeEventListener("click", onLocate);
-        tokenForm?.removeEventListener("submit", onTokenSubmit);
         markers.forEach((entry) => entry.marker.remove());
         markers = [];
         map?.remove();
