@@ -21,7 +21,8 @@ function loadStyle(href) {
   loadedStyles.add(href);
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = href;
+  // Sello anti-caché: evita reutilizar un CSS viejo tras un deploy
+  link.href = `${href}?v=${Date.now().toString(36)}`;
   link.dataset.featureStyle = href;
   document.head.appendChild(link);
 }

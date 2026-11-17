@@ -83,6 +83,19 @@ function mountApp() {
 /* Service Worker (PWA) */
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
+
+  // En local (dev-server) el SW es un estorbo: sirve archivos viejos cacheados.
+  const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  if (isLocal) {
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      regs.forEach((reg) => reg.unregister());
+    });
+    if (window.caches?.keys) {
+      caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+    }
+    return;
+  }
+
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {
       /* Sin SW la app sigue funcionando en línea */
