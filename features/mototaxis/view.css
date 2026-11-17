@@ -520,6 +520,17 @@
 
 .mt-result__icon svg { width: 16px; height: 16px; }
 
+/* Cada categoría con su color: se distingue de un vistazo en la lista */
+.mt-result__icon--park { color: #16a34a; }
+.mt-result__icon--store { color: #ea580c; }
+.mt-result__icon--food { color: #e11d48; }
+.mt-result__icon--health { color: #dc2626; }
+.mt-result__icon--beach { color: #0891b2; }
+.mt-result__icon--fuel { color: #65a30d; }
+.mt-result__icon--bank { color: #2563eb; }
+.mt-result__icon--hotel { color: #7c3aed; }
+.mt-result__icon--address { color: var(--fv-accent); }
+
 .mt-result__body {
   display: flex;
   flex-direction: column;

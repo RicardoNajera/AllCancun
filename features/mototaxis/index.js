@@ -33,6 +33,48 @@ const pinIcon = `
     <circle cx="12" cy="10" r="2.6" />
   </svg>`;
 
+/* Iconos por categoría de lugar: la lista se lee de un vistazo,
+ * como en Google Maps (parque, tienda, comida, salud, playa…). */
+const CATEGORY_ICONS = {
+  park: `<path d="M12 21v-6" /><path d="M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10z" /><path d="M8.5 18h7" />`,
+  store: `<path d="M4 9h16l-1.2 10.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8z" /><path d="M9 9V6.5a3 3 0 0 1 6 0V9" />`,
+  food: `<path d="M6 3v8a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" /><path d="M8 13v8" /><path d="M17 3c-1.7 1.5-2.5 3.5-2.5 6s.8 3 2.5 3v9" />`,
+  health: `<path d="M12 21s-7.5-4.7-7.5-10.2A4.3 4.3 0 0 1 12 7.8a4.3 4.3 0 0 1 7.5 3c0 5.5-7.5 10.2-7.5 10.2z" />`,
+  beach: `<path d="M3 18h18" /><path d="M12 18V9" /><path d="M12 9a5 5 0 0 1 9 2" /><path d="M12 9H4" /><circle cx="6.5" cy="6" r="2" />`,
+  fuel: `<path d="M5 21V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v16" /><path d="M3 21h12" /><path d="M13 9h2.5a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V9l-2-2" />`,
+  bank: `<path d="M3 10h18" /><path d="M5 10v9" /><path d="M9.5 10v9" /><path d="M14.5 10v9" /><path d="M19 10v9" /><path d="M3 21h18" /><path d="M12 3l9 7H3z" />`,
+  hotel: `<path d="M3 20V8h7v12" /><path d="M10 12h7a4 4 0 0 1 4 4v4" /><path d="M3 20h18" /><circle cx="6.5" cy="5.5" r="1.8" />`,
+  address: `<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z" /><circle cx="12" cy="10" r="2.6" />`,
+};
+
+/* Elige el icono a partir del `maki` de Mapbox y del tipo/nombre del lugar */
+function categoryIcon(place) {
+  const maki = String(place.maki || "").toLowerCase();
+  const name = String(place.name || "").toLowerCase();
+  const type = String(place.placeType || "");
+
+  if (maki) {
+    if (/park|garden|playground/.test(maki)) return "park";
+    if (/grocery|shop|store|convenience|mall|supermarket/.test(maki)) return "store";
+    if (/restaurant|cafe|bar|fast|food|bakery|pizza/.test(maki)) return "food";
+    if (/hospital|doctor|pharmacy|medical|dentist/.test(maki)) return "health";
+    if (/beach|swimming/.test(maki)) return "beach";
+    if (/fuel|gas/.test(maki)) return "fuel";
+    if (/bank|atm/.test(maki)) return "bank";
+    if (/lodging|hotel/.test(maki)) return "hotel";
+  }
+  if (/parque|jard[ií]n|plaza|glorieta/.test(name)) return "park";
+  if (/oxxo|walmart|soriana|chedraui|comer|costco|super|tienda|mercado/.test(name)) return "store";
+  if (/taco|pizza|caf|restaur|bar|comida|marquesita|antojito/.test(name)) return "food";
+  if (/farmacia|hospital|cl[ií]nica|consultorio|dental/.test(name)) return "health";
+  if (/playa|malec[oó]n/.test(name)) return "beach";
+  if (/gasolina|pemex|gas/.test(name)) return "fuel";
+  if (/banco|banorte|bbva|santander|hsbc/.test(name)) return "bank";
+  if (/hotel|hostal|suites/.test(name)) return "hotel";
+  if (type === "poi") return "store";
+  return "address";
+}
+
 /* Marcador kawaii: gatito con mejillas rosadas dentro de un pin */
 const kawaiiPinIcon = `
   <svg viewBox="0 0 44 56" fill="none" aria-hidden="true">
@@ -517,18 +559,25 @@ export default {
           return;
         }
         resultsEl.innerHTML = places
-          .map(
-            (place, index) => `
+          .map((place, index) => {
+            const iconKey = categoryIcon(place);
+            const iconBody = CATEGORY_ICONS[iconKey] || CATEGORY_ICONS.address;
+            return `
             <li>
               <button type="button" class="mt-result" data-result="${index}">
-                <span class="mt-result__icon" aria-hidden="true">${pinIcon}</span>
+                <span class="mt-result__icon mt-result__icon--${iconKey}" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    ${iconBody}
+                  </svg>
+                </span>
                 <span class="mt-result__body">
                   <span class="mt-result__name"></span>
                   <span class="mt-result__address"></span>
                 </span>
               </button>
-            </li>`
-          )
+            </li>`;
+          })
           .join("");
         resultsEl.hidden = false;
 
@@ -556,12 +605,8 @@ export default {
 
       const runSearch = async (query) => {
         const text = String(query || "").trim();
-        if (text.length < 3) {
+        if (text.length < 2) {
           renderResults([]);
-          return;
-        }
-        if (!token) {
-          setError("Para buscar direcciones necesitas tu token de Mapbox.");
           return;
         }
         searchController?.abort();
@@ -574,7 +619,13 @@ export default {
           });
           if (destroyed) return;
           renderResults(places);
-          setError(places.length ? "" : "Sin resultados. Intenta con otra dirección.");
+          if (places.length) {
+            /* Si el motor corrigió la escritura, se avisa sin interrumpir. */
+            const fixed = places.corrected;
+            setError(fixed ? `Mostrando resultados para “${fixed}”.` : "");
+          } else {
+            setError("Sin resultados. Prueba con otra palabra o una dirección.");
+          }
         } catch (err) {
           if (err?.name === "AbortError") return;
           if (err?.message === "token") {
