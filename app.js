@@ -84,7 +84,8 @@ function mountApp() {
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
-  // En local (dev-server) el SW es un estorbo: sirve archivos viejos cacheados.
+  // En local (dev-server) el SW solo estorba: sirve archivos viejos cacheados.
+  // Se desregistra y se vacía todo para ver siempre la última versión.
   const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
   if (isLocal) {
     navigator.serviceWorker.getRegistrations().then((regs) => {
@@ -97,9 +98,15 @@ function registerServiceWorker() {
   }
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {
-      /* Sin SW la app sigue funcionando en línea */
-    });
+    navigator.serviceWorker
+      .register("sw.js")
+      .then((reg) => {
+        // Busca una versión nueva del SW en cada apertura
+        reg.update().catch(() => {});
+      })
+      .catch(() => {
+        /* Sin SW la app sigue funcionando en línea */
+      });
   });
 }
 

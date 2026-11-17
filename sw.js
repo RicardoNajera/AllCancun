@@ -1,5 +1,5 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v35";
+const CACHE_VERSION = "v36";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
 
 const APP_SHELL = [

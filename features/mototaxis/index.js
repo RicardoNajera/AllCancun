@@ -74,6 +74,19 @@ export default {
           <div class="mt-map__canvas" id="mt-map-canvas" role="application"
                aria-label="Mapa interactivo de Cancún"></div>
 
+          <div class="mt-map__fallback" data-map-fallback hidden>
+            <svg class="mt-map__fallback-icon" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 20l-5.5 2V6L9 4l6 2 5.5-2v16L15 22l-6-2z" />
+              <path d="M9 4v16M15 6v16" />
+            </svg>
+            <p class="mt-map__fallback-text" data-map-fallback-text>Cargando mapa…</p>
+            <button type="button" class="mt-map__fallback-btn" data-action="reload">
+              Reintentar
+            </button>
+          </div>
+
           <button type="button" class="mt-fab mt-fab--back" data-action="back"
                   aria-label="Volver al inicio">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -207,6 +220,19 @@ export default {
         errorEl.textContent = msg || "";
         errorEl.hidden = !msg;
       };
+
+      /* Respaldo visible: el mapa nunca queda negro en silencio */
+      const mapFallback = $("[data-map-fallback]");
+      const hideMapFallback = () => {
+        if (mapFallback) mapFallback.hidden = true;
+      };
+      const failMap = (msg) => {
+        if (mapFallback) {
+          mapFallback.hidden = false;
+          const text = mapFallback.querySelector("[data-map-fallback-text]");
+          if (text && msg) text.textContent = msg;
+        }
+      };
       /* ---------- Mapa ---------- */
       const setMarker = (kind, point, label) => {
         if (!map || !window.maplibregl) return null;
@@ -281,6 +307,10 @@ export default {
         try {
           const maplibregl = await loadMapLibre();
           if (destroyed) return;
+          if (!window.maplibregl) {
+            failMap("No se pudo cargar el motor del mapa.");
+            return;
+          }
 
           map = new maplibregl.Map({
             container: "mt-map-canvas",
@@ -292,19 +322,40 @@ export default {
             dragRotate: false,
           });
 
+          let styleReady = false;
           map.on("load", () => {
+            styleReady = true;
+            map.resize();
             ensureRouteLayers();
+            hideMapFallback();
           });
 
-          // Si el estilo tarda o falla, dejamos las capas listas igual
-          map.once("styledata", ensureRouteLayers);
-          map.on("error", () => {
-            if (!map?.getSource("mt-route")) ensureRouteLayers();
+          map.once("styledata", () => {
+            if (!styleReady) {
+              map.resize();
+              ensureRouteLayers();
+              hideMapFallback();
+            }
           });
 
-          setMarker("origin", origin);
-        } catch {
-          setError("El mapa no cargó. Revisa tu conexión e intenta de nuevo.");
+          map.on("error", (event) => {
+            if (!styleReady) {
+              failMap("No se pudo cargar el mapa. Revisa tu conexión.");
+            } else if (!map?.getSource("mt-route")) {
+              ensureRouteLayers();
+            }
+            if (event?.error) console.warn("[mt-map]", event.error?.message || event.error);
+          });
+
+          // El canvas a veces nace con tamaño 0 si el contenedor aún no se mide
+          setTimeout(() => map?.resize(), 260);
+          setTimeout(() => map?.resize(), 900);
+          setTimeout(() => {
+            if (map && !styleReady) failMap("El mapa tardó demasiado. Revisa tu conexión.");
+          }, 9000);
+        } catch (error) {
+          failMap("No se pudo cargar el mapa. Revisa tu conexión.");
+          console.warn("[mt-map]", error);
         }
       };
 
@@ -324,10 +375,15 @@ export default {
             setError("");
             if (destination) planTrip();
           },
-          () => {
-            setError("No leímos tu ubicación. Usamos el centro de Cancún como origen.");
+          (error) => {
+            const denied = error?.code === 1;
+            setError(
+              denied
+                ? "Bloqueaste la ubicación. Actívala en el candado de la barra de direcciones para usar tu punto de partida real."
+                : "No pudimos leer tu ubicación. Usamos el centro de Cancún como origen."
+            );
           },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
         );
       };
 
@@ -458,6 +514,16 @@ export default {
 
       /* ---------- Servicios / CTA ---------- */
       const onClick = (event) => {
+        const reload = event.target.closest('[data-action="reload"]');
+        if (reload) {
+          // Limpia todo y recarga: garantiza la última versión sin caché vieja
+          Promise.resolve()
+            .then(() => window.caches?.keys?.())
+            .then((keys) => Promise.all((keys || []).map((key) => caches.delete(key))))
+            .catch(() => {})
+            .then(() => location.reload());
+          return;
+        }
         const btn = event.target.closest(".mt-service");
         if (btn) {
           root.querySelectorAll(".mt-service").forEach((el) => {
