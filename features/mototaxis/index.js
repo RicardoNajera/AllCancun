@@ -274,6 +274,8 @@ export default {
           maxZoom: 15.5,
           duration: 700,
         });
+      };
+
       const ensureRouteLayers = () => {
         if (!map || map.getSource("mt-route")) return;
         map.addSource("mt-route", {
@@ -328,6 +330,9 @@ export default {
             map.resize();
             ensureRouteLayers();
             hideMapFallback();
+            // Si la ubicación llegó antes que el mapa, pintamos el origen ahora
+            clearMarkers("origin");
+            setMarker("origin", origin, "Tu ubicación");
           });
 
           map.once("styledata", () => {
@@ -422,9 +427,6 @@ export default {
             setError("No pudimos trazar la ruta. Prueba con otra dirección.");
           }
         }
-      };
-
-
       };
 
       /* ---------- Buscador ---------- */
