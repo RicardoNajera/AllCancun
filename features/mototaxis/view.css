@@ -119,6 +119,99 @@
   70%, 100% { opacity: 0; transform: scale(2.2); }
 }
 
+/* ---- Marcador kawaii de "Tu ubicación" ----
+   El pin flota con un rebote suave, lanza ondas rosas desde la punta
+   y proyecta una sombra elíptica para asentarse sobre el mapa. */
+.mt-pin--origin {
+  /* MapLibre posiciona el marcador con transform inline. NUNCA animamos
+     este elemento o se pierde su posición: la animación va en el svg. */
+  display: block;
+  width: 44px;
+  height: 56px;
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 6px 10px rgba(255, 110, 165, 0.42))
+          drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+}
+
+.mt-pin--origin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 50% 100%;
+  animation: mt-kawaii-bob 2.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Sombra elíptica que respira junto al pin */
+.mt-pin--origin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 20px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(60, 20, 40, 0.42), transparent 72%);
+  transform: translateX(-50%);
+  animation: mt-kawaii-shadow 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Onda de pulso rosa que sale de la punta */
+.mt-pin--origin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 138, 190, 0.85);
+  box-shadow: 0 0 12px rgba(255, 122, 171, 0.55);
+  animation: mt-kawaii-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes mt-kawaii-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.035); }
+}
+
+@keyframes mt-kawaii-shadow {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
+  50% { transform: translateX(-50%) scale(0.78); opacity: 0.3; }
+}
+
+@keyframes mt-kawaii-pulse {
+  0% { transform: scale(0.35); opacity: 0.9; }
+  70%, 100% { transform: scale(2.1); opacity: 0; }
+}
+
+/* Al tocar el gatito se alegra y salta (animamos el svg, nunca el marcador) */
+.mt-pin--origin:active svg {
+  animation: mt-kawaii-hop 420ms var(--ease-out);
+}
+
+@keyframes mt-kawaii-hop {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-13px) scale(1.12, 0.94); }
+  65% { transform: translateY(0) scale(0.94, 1.08); }
+  85% { transform: translateY(-3px) scale(1.03, 0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Respeta a quien pide menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .mt-pin--origin svg,
+  .mt-pin--origin::before,
+  .mt-pin--origin::after {
+    animation: none;
+  }
+}
+
 .mt-map__eta {
   position: absolute;
   left: 50%;

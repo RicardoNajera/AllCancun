@@ -33,6 +33,52 @@ const pinIcon = `
     <circle cx="12" cy="10" r="2.6" />
   </svg>`;
 
+/* Marcador kawaii: gatito con mejillas rosadas dentro de un pin */
+const kawaiiPinIcon = `
+  <svg viewBox="0 0 44 56" fill="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="mt-kawaii-body" x1="8" y1="4" x2="36" y2="52" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#fff6fa" />
+        <stop offset="1" stop-color="#ffe0ee" />
+      </linearGradient>
+      <linearGradient id="mt-kawaii-face" x1="10" y1="10" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#ffd1e3" />
+        <stop offset="1" stop-color="#ffb3d1" />
+      </linearGradient>
+    </defs>
+
+    <!-- cuerpo del pin -->
+    <path d="M22 53.5c0 0 15.5-12.4 15.5-24.2C37.5 18.9 30.6 12 22 12S6.5 18.9 6.5 29.3C6.5 41.1 22 53.5 22 53.5z"
+          fill="url(#mt-kawaii-body)" stroke="#ff8ec0" stroke-width="1.6" />
+
+    <!-- carita -->
+    <ellipse cx="22" cy="28" rx="11.5" ry="10.5" fill="url(#mt-kawaii-face)" />
+
+    <!-- orejas -->
+    <path d="M13.4 21.6l-1.9-6.4 6.1 2.6z" fill="#ffb3d1" stroke="#ff8ec0"
+          stroke-width="1.3" stroke-linejoin="round" />
+    <path d="M30.6 21.6l1.9-6.4-6.1 2.6z" fill="#ffb3d1" stroke="#ff8ec0"
+          stroke-width="1.3" stroke-linejoin="round" />
+
+    <!-- ojos -->
+    <ellipse cx="17.9" cy="27.4" rx="1.75" ry="2.15" fill="#4a2b3a" />
+    <ellipse cx="26.1" cy="27.4" rx="1.75" ry="2.15" fill="#4a2b3a" />
+    <circle cx="18.5" cy="26.6" r="0.62" fill="#fff" />
+    <circle cx="26.7" cy="26.6" r="0.62" fill="#fff" />
+
+    <!-- mejillas -->
+    <ellipse cx="15.1" cy="30.6" rx="2.1" ry="1.25" fill="#ff7aab" opacity="0.55" />
+    <ellipse cx="28.9" cy="30.6" rx="2.1" ry="1.25" fill="#ff7aab" opacity="0.55" />
+
+    <!-- boquita :3 -->
+    <path d="M19.9 30.9q2.1 1.85 4.2 0" stroke="#4a2b3a" stroke-width="1.15"
+          stroke-linecap="round" fill="none" />
+
+    <!-- bigotes -->
+    <path d="M12.6 26.2h-3M12.9 28.9l-2.9.7M31.4 26.2h3M31.1 28.9l2.9.7"
+          stroke="#ff8ec0" stroke-width="0.95" stroke-linecap="round" opacity="0.75" />
+  </svg>`;
+
 const services = [
   {
     id: "moto",
@@ -238,9 +284,16 @@ export default {
         if (!map || !window.maplibregl) return null;
         const el = document.createElement("span");
         el.className = `mt-pin mt-pin--${kind}`;
-        const marker = new window.maplibregl.Marker({ element: el, anchor: "center" })
-          .setLngLat([point.lng, point.lat]);
-        if (label) marker.setPopup(new window.maplibregl.Popup({ offset: 16 }).setText(label));
+        if (kind === "origin") {
+          el.innerHTML = kawaiiPinIcon;
+          el.setAttribute("role", "img");
+          el.setAttribute("aria-label", label || "Tu ubicación");
+        }
+        const marker = new window.maplibregl.Marker({
+          element: el,
+          anchor: kind === "origin" ? "bottom" : "center",
+        }).setLngLat([point.lng, point.lat]);
+        if (label) marker.setPopup(new window.maplibregl.Popup({ offset: 22 }).setText(label));
         marker.addTo(map);
         markers.push({ kind, marker });
         return marker;
@@ -323,6 +376,8 @@ export default {
             pitchWithRotate: false,
             dragRotate: false,
           });
+          if (window.__MT_DEBUG__) window.__mtMap = map;
+
 
           let styleReady = false;
           map.on("load", () => {
@@ -334,6 +389,9 @@ export default {
             clearMarkers("origin");
             setMarker("origin", origin, "Tu ubicación");
           });
+
+
+
 
           map.once("styledata", () => {
             if (!styleReady) {
@@ -356,8 +414,13 @@ export default {
           setTimeout(() => map?.resize(), 260);
           setTimeout(() => map?.resize(), 900);
           setTimeout(() => {
-            if (map && !styleReady) failMap("El mapa tardó demasiado. Revisa tu conexión.");
-          }, 9000);
+            // Solo mostramos el aviso si de verdad no hay nada pintado:
+            // con red lenta los tiles pueden seguir en camino.
+            if (map && !styleReady && !map.isStyleLoaded()) {
+              failMap("El mapa tardó demasiado. Revisa tu conexión.");
+            }
+          }, 20000);
+
         } catch (error) {
           failMap("No se pudo cargar el mapa. Revisa tu conexión.");
           console.warn("[mt-map]", error);
@@ -365,6 +428,16 @@ export default {
       };
 
       /* ---------- Ubicación ---------- */
+      /* Centra el mapa en el usuario. Sin trucos de offset: el panel de vidrio
+         ya cubre la parte baja del mapa, así que basta con centrar el punto
+         y dejar que el marcador quede visible en la franja superior. */
+      const centerOnUser = (point, duration = 700) => {
+        if (!map || !point) return;
+        const target = { center: [point.lng, point.lat], zoom: 15.2, essential: true };
+        if (duration > 0) map.flyTo({ ...target, duration });
+        else map.jumpTo(target);
+      };
+
       const detectLocation = () => {
         if (!navigator.geolocation) {
           setError("Tu navegador no permite geolocalización. Escribe tu destino igual.");
@@ -376,7 +449,13 @@ export default {
             origin = { lng, lat };
             clearMarkers("origin");
             setMarker("origin", origin, "Tu ubicación");
-            map?.flyTo({ center: [lng, lat], zoom: 14.5, duration: 900 });
+            // El panel de vidrio tapa la parte de abajo del mapa. En vez de
+            // padding (que se desborda si el canvas es bajo), desplazamos el
+            // centro con el offset real disponible.
+            centerOnUser(origin);
+
+
+
             setError("");
             if (destination) planTrip();
           },
