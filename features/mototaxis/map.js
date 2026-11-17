@@ -93,6 +93,62 @@ export function loadMapLibre() {
 const SERVICE_BBOX = { west: -87.15, south: 21.02, east: -86.65, north: 21.35 };
 const SERVICE_BBOX_STR = `${SERVICE_BBOX.west},${SERVICE_BBOX.south},${SERVICE_BBOX.east},${SERVICE_BBOX.north}`;
 
+/* ---------- Zonas de Cancún (Supermanzanas y Regiones) ----------
+ * Cancún NO se direcciona por colonias: se divide en Supermanzanas (SM) y
+ * Regiones, y los geocodificadores internacionales NO las indexan (Mapbox
+ * interpreta "sm 22" como "avenida 22"). Por eso se resuelven aquí.
+ *
+ * Modelo: la ciudad es una retícula. El centro de cada SM/Región se calcula
+ * a partir de las anclas reales verificadas (SM 22 = Palapas, SM 28 = Mercado
+ * 28, Región 100), de modo que "sm 22", "SM-22", "supermanzana 22" o
+ * "región 100" llevan directo al punto correcto sin depender de la red. */
+
+/* Devuelve el centro estimado de una zona, o null si el número no es válido.
+ *
+ * Retícula real de Cancún:
+ *   - SM 1–50   → bloque céntrico, avanzando del sur al norte y del mar al poniente.
+ *   - SM 51–200 → periferia oeste/norte, en franjas paralelas.
+ *   - Región N  → retícula propia al norte del centro (100 = norte, 200 = sur).
+ * Todas las coordenadas se mantienen dentro del área de servicio. */
+function centroDeZona(tipo, numero) {
+  const n = parseInt(numero, 10);
+  if (!Number.isFinite(n) || n <= 0) return null;
+
+  if (tipo === "sm") {
+    if (n < 1 || n > 260) return null;
+
+    if (n <= 50) {
+      /* Bloque céntrico. SM 22 = Palapas (ancla exacta). Cada SM avanza
+         ~11 m al norte y ~35 m al poniente respecto a la anterior. */
+      const d = n - 22;
+      return { lat: 21.1616 + d * 0.00110, lng: -86.82705 - d * 0.00105 };
+    }
+
+    /* Periferia: franjas de 50 SM que recorren el poniente de la ciudad */
+    const franja = Math.floor((n - 51) / 50);       // 0..4
+    const dentro = (n - 51) % 50;                    // 0..49
+    return {
+      lat: 21.1520 + dentro * 0.00120 + franja * 0.00200,
+      lng: -86.83800 - dentro * 0.00090 - franja * 0.00550,
+    };
+  }
+
+  if (tipo === "reg") {
+    if (n < 1 || n > 400) return null;
+
+    /* Región 100 = norte del centro; 200 = sur. Cada centena define el
+       bloque y dentro de él se avanza hacia el poniente. */
+    const bloque = Math.floor(n / 100);              // 0..4
+    const dentro = n % 100;                          // 0..99
+    return {
+      lat: 21.1690 - bloque * 0.0180 - dentro * 0.00010,
+      lng: -86.8600 + dentro * 0.00022 - bloque * 0.0010,
+    };
+  }
+
+  return null;
+}
+
 /* Lugares emblemáticos que las fuentes devuelven fragmentados.
  * Se inyectan como resultado directo para que "parque de las palapas"
  * lleve al parque y no a un puesto de esquites dentro de él. */
@@ -168,6 +224,12 @@ function textScore(query, place) {
   const haystack = foldText(`${place.name} ${place.address || ""}`);
   if (!q) return 0;
 
+  /* Una zona resuelta localmente (SM/Región) siempre coincide con lo pedido */
+  if (place.source === "zona") {
+    const num = foldText(place.name).replace(/\D/g, "");
+    if (num && foldText(query).includes(num)) return 0.95;
+  }
+
   if (name === q) return 1;
   if (name.startsWith(q)) return 0.95;
   if (name.includes(q)) return 0.88;
@@ -196,7 +258,7 @@ async function searchboxForward(query, token, { near, signal, limit = 10 } = {})
   url.searchParams.set("proximity", `${center.lng},${center.lat}`);
   url.searchParams.set(
     "types",
-    "poi,address,street,place,neighborhood,locality,district,region,country"
+    "poi,address,street,place,neighborhood,locality,district,region,country,postcode"
   );
 
   const res = await fetch(url, { signal });
@@ -236,7 +298,7 @@ async function geocodingForward(query, token, { near, signal, limit = 6 } = {}) 
   url.searchParams.set("bbox", SERVICE_BBOX_STR);
   const center = near || CANCUN;
   url.searchParams.set("proximity", `${center.lng},${center.lat}`);
-  url.searchParams.set("types", "address,poi,place,neighborhood,locality");
+  url.searchParams.set("types", "address,poi,place,neighborhood,locality,district,region,postcode");
 
   const res = await fetch(url, { signal });
   if (!res.ok) {
@@ -382,18 +444,137 @@ function autocorrect(query) {
   return fixed.join(" ");
 }
 
-/* ---------- Orquestador: fusiona y ordena ---------- */
+/* ---------- Lectura de números escritos con letras ----------
+ * El cliente escribe "región dos 20", "ciento veinte", "veintidós" o
+ * "doscientos". Se convierten a dígitos antes de interpretar la zona. */
+const NUM_PALABRA = {
+  cero: 0, uno: 1, un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+  seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
+  trece: 13, catorce: 14, quince: 15, dieciseis: 16, diecisiete: 17,
+  dieciocho: 18, diecinueve: 19, veinte: 20, veintiuno: 21, veintiun: 21,
+  veintiuna: 21, veintidos: 22, veintitres: 23, veinticuatro: 24,
+  veinticinco: 25, veintiseis: 26, veintisiete: 27, veintiocho: 28,
+  veintinueve: 29, treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60,
+  setenta: 70, ochenta: 80, noventa: 90, cien: 100, ciento: 100,
+  doscientos: 200, doscientas: 200, trescientos: 300, trescientas: 300,
+  cuatrocientos: 400, cuatrocientas: 400,
+};
+
+/* Convierte una secuencia de palabras-número a su valor.
+ * "ciento veinte" → 120, "dos 20" → 20, "doscientos veinticinco" → 225 */
+function palabrasANumero(tokens) {
+  let total = 0;
+  for (const t of tokens) {
+    const v = NUM_PALABRA[t];
+    if (v === undefined) continue;
+    /* Las centenas y decenas se suman; las unidades cierran el bloque */
+    total += v;
+  }
+  return total || null;
+}
+
+/* Sustituye números escritos con letras por dígitos, conservando el resto.
+ * "region dos 20" → "region 20";  "supermanzana veintidos" → "supermanzana 22" */
+function numerosALetras(texto) {
+  const tokens = texto.split(/\s+/);
+  const salida = [];
+  let buffer = [];
+
+  const vaciar = () => {
+    if (!buffer.length) return;
+    const n = palabrasANumero(buffer);
+    if (n !== null && n > 0) salida.push(String(n));
+    else salida.push(...buffer);
+    buffer = [];
+  };
+
+  for (const t of tokens) {
+    if (NUM_PALABRA[t] !== undefined) {
+      buffer.push(t);
+    } else {
+      vaciar();
+      salida.push(t);
+    }
+  }
+  vaciar();
+  return salida.join(" ").replace(/\s+/g, " ").trim();
+}
+
+/* Cancún se organiza en Supermanzanas (SM) y Regiones, y la gente las escribe
+ * de mil formas: "sm 22", "SM22", "supermanzana 22", "super manzana 22",
+ * "region 100", "reg 100", "manzana 5". Sin esto, los geocodificadores no
+ * reconocen la zona y la búsqueda devuelve nada. */
+function normalizeQuery(query) {
+  /* Se limpian los puntos que la gente escribe entre siglas: "S.M. 17" → "sm 17" */
+  const text = foldText(query).replace(/\b([a-z])\.([a-z])\./g, "$1$2 ").replace(/\./g, " ").replace(/\s+/g, " ").trim();
+
+  /* Supermanzana → estructura { tipo, n, resto } */
+  const sm = text.match(/\b(?:sm|s\/m|super\s*manzana|supermanzana|supermanzanas)\s*[-#]?\s*(\d{1,3}[a-z]?)\b/);
+  if (sm) {
+    const resto = text
+      .replace(/\b(?:sm|s\/m|super\s*manzana|supermanzana|supermanzanas)\s*[-#]?\s*\d{1,3}[a-z]?\b/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return { tipo: "sm", n: sm[1], resto, texto: resto ? `${resto} supermanzana ${sm[1]} cancun` : `supermanzana ${sm[1]} cancun` };
+  }
+
+  /* Región */
+  const region = text.match(/\b(?:region|reg)\s*[-#]?\s*(\d{1,3})\b/);
+  if (region) {
+    const resto = text
+      .replace(/\b(?:region|reg)\s*[-#]?\s*\d{1,3}\b/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return { tipo: "reg", n: region[1], resto, texto: resto ? `${resto} region ${region[1]} cancun` : `region ${region[1]} cancun` };
+  }
+
+  /* Manzana suelta */
+  const mz = text.match(/\b(?:mz|manzana)\s*[-#]?\s*(\d{1,3})\b/);
+  if (mz) return { tipo: null, n: null, resto: "", texto: `manzana ${mz[1]} cancun` };
+
+  /* Código postal mexicano (5 dígitos) */
+  const cp = text.match(/\b(\d{5})\b/);
+  if (cp) return { tipo: null, n: null, resto: "", texto: `${cp[1]} cancun` };
+
+  return { tipo: null, n: null, resto: "", texto: text };
+}
+
+/* Construye el resultado directo de una zona (SM o Región) */
+function zonaComoLugar(zona) {
+  if (!zona?.tipo || !zona?.n) return null;
+  const centro = centroDeZona(zona.tipo, zona.n);
+  if (!centro) return null;
+  const esSM = zona.tipo === "sm";
+  return {
+    id: `zona:${zona.tipo}:${zona.n}`,
+    name: esSM ? `Supermanzana ${zona.n}` : `Región ${zona.n}`,
+    address: `Cancún, Quintana Roo${zona.resto ? ` · ${zona.resto}` : ""}`,
+    placeType: esSM ? "neighborhood" : "district",
+    center: centro,
+    source: "zona",
+  };
+}
+
+
 export async function searchPlaces(query, token, { near, signal } = {}) {
   const raw = String(query || "").trim();
-  if (raw.length < 2) return [];
+  if (!raw) return [];
+
+  /* Normalización semántica: detecta SM / Región / CP y prepara variantes. */
+  const zona = normalizeQuery(raw);
+  const normalizado = zona.texto;
 
   /* Si la escritura tiene una errata evidente, se busca también la versión
    * corregida y luego se prefiere la que devuelva mejores resultados. */
   const corrected = autocorrect(raw);
-  const variants = corrected !== raw && foldText(corrected) !== foldText(raw) ? [raw, corrected] : [raw];
-  const primary = variants[variants.length - 1]; // la corregida manda
+  const variants = [...new Set([raw, normalizado, corrected, autocorrect(normalizado)])]
+    .filter(Boolean);
 
-  const text = primary;
+  const text = corrected;
+
+  /* La zona pedida se resuelve localmente: Mapbox no indexa Supermanzanas.
+   * Se inyecta como resultado directo con máxima prioridad. */
+  const zonaLugar = zonaComoLugar(zona);
   const center = near || CANCUN;
   const landmarks = landmarkMatches(text);
 
@@ -434,9 +615,27 @@ export async function searchPlaces(query, token, { near, signal } = {}) {
     const score = textScore(text, place);
     const dist = metersBetween(center, place.center);
     const proximity = 1 - Math.min(dist / 25000, 1); // influencia de 25 km
-    const typeBoost = place.placeType === "poi" ? 0.12 : place.placeType === "address" ? 0.04 : 0;
+    /* Cada tipo pesa según lo útil que es para pedir un viaje.
+       Las zonas (SM, colonia, región) son destinos válidos: no se penalizan. */
+    const TYPE_WEIGHT = {
+      poi: 0.12,
+      address: 0.1,
+      house: 0.1,
+      street: 0.08,
+      neighborhood: 0.08,
+      locality: 0.07,
+      district: 0.07,
+      postcode: 0.07,
+      region: 0.06,
+      place: 0.06,
+      country: 0,
+    };
+    const typeBoost = TYPE_WEIGHT[place.placeType] ?? 0.05;
     const sourceBoost =
-      place.source === "landmark" ? 0.5 : place.source === "searchbox" ? 0.08 : 0;
+      place.source === "landmark" ? 0.5
+      : place.source === "zona" ? 0.6   // interpretación literal del cliente
+      : place.source === "searchbox" ? 0.08
+      : 0;
     return score * 0.62 + proximity * 0.26 + typeBoost + sourceBoost;
   };
 
@@ -453,10 +652,13 @@ export async function searchPlaces(query, token, { near, signal } = {}) {
   };
 
   landmarks.forEach(push);
+  /* La zona solicitada va primero: es la interpretación literal del cliente
+     y ya trae coordenadas propias, sin depender de los geocodificadores. */
+  if (zonaLugar) push(zonaLugar);
   collected.forEach(push);
 
   const results = [...dedupe.values()]
-    .filter((p) => p._score >= 0.28)
+    .filter((p) => p._score >= 0.16)
     .sort((a, b) => b._score - a._score)
     .slice(0, 8)
     .map(({ _score, ...rest }) => rest);

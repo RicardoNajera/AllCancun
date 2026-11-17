@@ -3,6 +3,15 @@
    Prefijo `mt-`. Exclusivo de esta vista.
    ========================================================================== */
 
+/* Acento local. `features/shared/feature-view.css` (que define `--fv-accent`)
+   NO se carga en esta vista, así que se declara aquí para que todas las
+   reglas `var(--fv-accent)` / `var(--fv-soft)` tengan valor resuelto. */
+.mt-app,
+.feature-view[data-feature="mototaxis"] {
+  --fv-accent: var(--accent-viajes);
+  --fv-soft: var(--accent-viajes-soft);
+}
+
 .mt-app {
   display: flex;
   flex-direction: column;
@@ -303,6 +312,17 @@
   50% { opacity: 0.3; }
 }
 
+/* ---- Auto-posicionamiento ----
+   Reserva el alto del header flotante: al desplazar un bloque a la vista,
+   `scroll-margin-top` evita que quede escondido bajo la barra superior. */
+.mt-search,
+.mt-results,
+.mt-trip,
+.mt-pay {
+  scroll-margin-top: calc(var(--header-height) + 12px);
+  scroll-margin-bottom: var(--space-5);
+}
+
 /* ---- Hoja inferior ---- */
 .mt-sheet {
   position: relative;
@@ -370,6 +390,8 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(0, 0, 0, 0.22);
   transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+  /* No encogerse cuando aparecen resultados: causaba el recorte del campo */
+  flex: 0 0 auto;
 }
 
 .mt-search:focus-within {
@@ -398,6 +420,11 @@
   font-family: inherit;
   font-size: var(--font-size-md);
   outline: none;
+  /* El caret heredaba un color invisible sobre el cristal: se fija explícito */
+  caret-color: var(--fv-accent);
+  /* Sin line-height ni padding el campo quedaba de 18px y el caret minúsculo */
+  line-height: 1.6;
+  padding: 6px 0;
 }
 
 .mt-search__input::placeholder { color: var(--color-text-secondary); }
@@ -475,17 +502,24 @@
 
 .mt-error[hidden] { display: none; }
 
-/* ---- Resultados de búsqueda ---- */
+/* ---- Resultados de búsqueda ----
+   `max-height` en unidades de viewport: con un valor fijo en px el sheet
+   crecía más que el área visible y el buscador quedaba recortado arriba.
+   Ahora la lista se adapta al alto disponible y hace su propio scroll. */
 .mt-results {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 224px;
+  max-height: min(224px, 40vh);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   list-style: none;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  /* Evita que el flexbox del sheet encoja la lista */
+  flex: 0 0 auto;
 }
 
 .mt-results[hidden] { display: none; }
@@ -681,48 +715,195 @@
   letter-spacing: -0.02em;
 }
 
-/* ---- Pago ---- */
+/* ---- Forma de pago ---- */
 .mt-pay {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 11px var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  flex-direction: column;
+  gap: 6px;
 }
 
 .mt-pay__label {
   font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
-.mt-pay__value {
-  display: inline-flex;
+/* Botón visible: fondo con acento y borde marcado para que no se pierda
+   sobre el tema oscuro. Se usa `.mt-pay .mt-pay__select` (especificidad
+   0,2,0) porque `styles/base.css` resetea `background` y `border` de todo
+   `button` con un shorthand. */
+.mt-pay .mt-pay__select {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  flex: 1 1 auto;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 13px var(--space-3);
+  border-radius: var(--radius-md);
+  border: 2px solid #f5a524;
+  background: #1c2431 linear-gradient(
+    rgba(245, 165, 36, 0.22),
+    rgba(245, 165, 36, 0.22)
+  );
+  color: var(--color-text);
+  font-family: inherit;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, transform 0.12s ease;
 }
 
-.mt-pay__chip {
+.mt-pay__select:active { transform: scale(0.985); }
+
+.mt-pay__select:focus-visible {
+  outline: 2px solid #f5a524;
+  outline-offset: 2px;
+}
+
+/* Ya elegido: borde y fondo con el acento de la categoría */
+.mt-pay.mt-pay--chosen .mt-pay__select {
+  border-color: var(--fv-accent);
+  background: #1c2431 linear-gradient(
+    var(--fv-soft),
+    var(--fv-soft)
+  );
+}
+
+.mt-pay--pending .mt-pay__value { color: #f5a524; }
+
+.mt-pay__icon {
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  color: var(--color-text-inverse);
+  background: #f5a524;
+}
+
+.mt-pay--chosen .mt-pay__icon { background: var(--fv-accent); }
+
+.mt-pay__icon svg { width: 14px; height: 14px; }
+
+.mt-pay__value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mt-pay__change {
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-inverse);
   background: var(--fv-accent);
 }
 
-.mt-pay__change {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--fv-accent);
+.mt-pay--pending .mt-pay__change { background: #f5a524; }
+
+/* ---- Opciones (efectivo / tarjeta) ---- */
+.mt-pay__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.mt-pay__options[hidden] { display: none; }
+
+.mt-pay__question {
+  margin: 0 0 2px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mt-pay .mt-pay__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 12px var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  text-align: left;
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.mt-pay__option:active { background: var(--fv-soft); }
+
+.mt-pay .mt-pay__option[aria-pressed="true"] {
+  border-color: var(--fv-accent);
+  background: #202a38;
+  box-shadow: inset 0 0 0 1px var(--fv-accent);
+}
+
+.mt-pay__option-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--fv-accent);
+  background: var(--fv-soft);
+}
+
+.mt-pay__option-icon svg { width: 19px; height: 19px; }
+
+.mt-pay__option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mt-pay__option-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.mt-pay__option-desc {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.mt-pay__tick {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-inverse);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.mt-pay__tick svg { width: 16px; height: 16px; }
+
+.mt-pay__option[aria-pressed="true"] .mt-pay__tick {
+  opacity: 1;
+  color: var(--fv-accent);
 }
 
 /* ---- Botón principal ---- */

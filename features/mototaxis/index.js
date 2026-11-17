@@ -125,19 +125,11 @@ const services = [
   {
     id: "moto",
     name: "Moto Taxi",
-    desc: "1 persona · casco incluido",
+    desc: "Casco incluido",
     eta: "3 min",
     price: "$35",
     icon: motoIcon,
     popular: true,
-  },
-  {
-    id: "moto-xl",
-    name: "Moto Taxi XL",
-    desc: "2 personas · con cajuela",
-    eta: "5 min",
-    price: "$55",
-    icon: motoIcon,
   },
   {
     id: "moto-envio",
@@ -212,12 +204,7 @@ export default {
 
           <ul class="mt-results" data-results hidden></ul>
 
-          <ul class="mt-quick" aria-label="Destinos frecuentes" data-quick>
-            <li><button type="button" class="mt-quick__item">Centro</button></li>
-            <li><button type="button" class="mt-quick__item">Playa Delfines</button></li>
-            <li><button type="button" class="mt-quick__item">Mercado 28</button></li>
-            <li><button type="button" class="mt-quick__item">Terminal ADO</button></li>
-          </ul>
+          <ul class="mt-quick" aria-label="Destinos frecuentes" data-quick hidden></ul>
 
           <div class="mt-trip" data-trip hidden>
             <div class="mt-trip__metric">
@@ -259,13 +246,63 @@ export default {
               .join("")}
           </ul>
 
-          <div class="mt-pay">
-            <span class="mt-pay__label">Pago</span>
-            <span class="mt-pay__value">
-              <span class="mt-pay__chip" aria-hidden="true">$</span>
-              Efectivo
-            </span>
-            <span class="mt-pay__change">Cambiar</span>
+          <div class="mt-pay" data-pay>
+            <span class="mt-pay__label">Forma de pago</span>
+            <button type="button" class="mt-pay__select" data-pay-toggle
+                    aria-haspopup="dialog" aria-expanded="false" data-pay-btn>
+              <span class="mt-pay__icon" data-pay-icon aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v1" />
+                  <rect x="3" y="7.5" width="18" height="11.5" rx="2.5" />
+                  <path d="M16.5 13.2h.01" />
+                </svg>
+              </span>
+              <span class="mt-pay__value" data-pay-value>Elige cómo pagar</span>
+              <span class="mt-pay__change">Elegir</span>
+            </button>
+
+            <div class="mt-pay__options" data-pay-options hidden>
+              <p class="mt-pay__question">¿Cómo vas a pagar tu mototaxi?</p>
+              <button type="button" class="mt-pay__option" data-pay-method="efectivo"
+                      aria-pressed="false">
+                <span class="mt-pay__option-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="2.6" />
+                    <path d="M6 12h.01M18 12h.01" />
+                  </svg>
+                </span>
+                <span class="mt-pay__option-body">
+                  <span class="mt-pay__option-name">Efectivo</span>
+                  <span class="mt-pay__option-desc">Pagas al conductor al bajar</span>
+                </span>
+                <span class="mt-pay__tick" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+              </button>
+              <button type="button" class="mt-pay__option" data-pay-method="tarjeta"
+                      aria-pressed="false">
+                <span class="mt-pay__option-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2.5" />
+                    <path d="M2 10h20" />
+                    <path d="M6 15h4" />
+                  </svg>
+                </span>
+                <span class="mt-pay__option-body">
+                  <span class="mt-pay__option-name">Tarjeta</span>
+                  <span class="mt-pay__option-desc">Débito o crédito, sin efectivo</span>
+                </span>
+                <span class="mt-pay__tick" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                       stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+              </button>
+            </div>
           </div>
 
           <button type="button" class="mt-cta" data-action="request">
@@ -292,6 +329,11 @@ export default {
       const spinner = $("[data-search-spinner]");
       const tripEl = $("[data-trip]");
       const quickEl = $("[data-quick]");
+      const payEl = $("[data-pay]");
+      const payBtn = $("[data-pay-btn]");
+      const payIconEl = $("[data-pay-icon]");
+      const payValueEl = $("[data-pay-value]");
+      const payOptionsEl = $("[data-pay-options]");
 
       let token = getToken();
       let map = null;
@@ -302,11 +344,47 @@ export default {
       let searchTimer = 0;
       let searchController = null;
       let destroyed = false;
+      let payMethod = null; // "efectivo" | "tarjeta" | null
 
       const setError = (msg) => {
         if (!errorEl) return;
         errorEl.textContent = msg || "";
         errorEl.hidden = !msg;
+      };
+
+      /* ---------- Auto-posicionamiento ----------
+       * El scroller de la vista es `.screen` (#app-screen). Cualquier bloque que
+       * crezca (resultados, opciones de pago, viaje) puede quedar fuera de vista.
+       * `reveal()` lo deja visible sin que el usuario tenga que arrastrar.
+       * Se ejecuta tras pintar para medir el layout definitivo. */
+      const scroller = root.closest(".screen") || document.scrollingElement;
+
+      const reveal = (el, { extra = 16 } = {}) => {
+        if (!el || !scroller) return;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (destroyed || !el.isConnected) return;
+          const box = el.getBoundingClientRect();
+          if (!box.height) return;
+
+          const viewBox = scroller.getBoundingClientRect();
+          const headerH = parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue("--header-height")
+          ) || 0;
+          const viewTop = viewBox.top + headerH;
+          const viewBottom = viewBox.bottom;
+
+          if (box.top >= viewTop - 1 && box.bottom <= viewBottom - 1) return;
+
+          const target = box.height > viewBottom - viewTop
+            ? scroller.scrollTop + (box.top - viewTop) - extra
+            : scroller.scrollTop + (box.bottom - viewBottom) + extra;
+
+          const max = scroller.scrollHeight - scroller.clientHeight;
+          scroller.scrollTo({
+            top: Math.max(0, Math.min(target, max)),
+            behavior: "smooth",
+          });
+        }));
       };
 
       /* Respaldo visible: el mapa nunca queda negro en silencio */
@@ -587,6 +665,11 @@ export default {
           btn.querySelector(".mt-result__address").textContent = place.address;
           btn.addEventListener("click", () => chooseDestination(place));
         });
+
+        /* Auto-posicionamiento: al aparecer la lista, el buscador puede quedar
+           recortado arriba si el sheet es más alto que el área visible.
+           Se mantiene el campo de búsqueda a la vista junto con la lista. */
+        reveal(resultsEl, { extra: 12 });
       };
 
       const chooseDestination = (place) => {
@@ -601,11 +684,15 @@ export default {
         if (quickEl) quickEl.hidden = true;
         setError("");
         planTrip();
+        /* Tras elegir destino aparece el bloque de viaje y, debajo, el selector
+           de pago. Se revela el conjunto (viaje + pago + CTA) para que el
+           siguiente paso quede a la vista sin arrastrar manualmente. */
+        reveal(payEl || tripEl, { extra: 12 });
       };
 
       const runSearch = async (query) => {
         const text = String(query || "").trim();
-        if (text.length < 2) {
+        if (!text) {
           renderResults([]);
           return;
         }
@@ -673,11 +760,86 @@ export default {
         }
       };
 
+      /* ---------- Forma de pago ---------- */
+      const CASH_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2" />
+        <circle cx="12" cy="12" r="2.6" />
+        <path d="M6 12h.01M18 12h.01" />
+      </svg>`;
+      const CARD_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2.5" />
+        <path d="M2 10h20" />
+        <path d="M6 15h4" />
+      </svg>`;
+
+      const setPayOpen = (open) => {
+        if (!payOptionsEl || !payBtn) return;
+        payOptionsEl.hidden = !open;
+        payBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        if (open) {
+          /* Auto-posicionar: el panel crece hacia abajo y puede salir de vista.
+             Se revela el bloque completo para que las dos opciones queden a mano. */
+          reveal(payOptionsEl, { extra: 12 });
+          payOptionsEl.querySelector(".mt-pay__option")?.focus({ preventScroll: true });
+        }
+      };
+
+      const setPayMethod = (method) => {
+        if (method !== "efectivo" && method !== "tarjeta") return;
+        payMethod = method;
+        if (payEl) {
+          payEl.classList.toggle("mt-pay--chosen", true);
+          payEl.classList.toggle("mt-pay--pending", false);
+        }
+        if (payValueEl) {
+          payValueEl.textContent = method === "efectivo" ? "Efectivo" : "Tarjeta";
+        }
+        if (payIconEl) {
+          payIconEl.innerHTML = method === "efectivo" ? CASH_ICON : CARD_ICON;
+        }
+        const change = payEl?.querySelector(".mt-pay__change");
+        if (change) change.textContent = "Cambiar";
+        payOptionsEl?.querySelectorAll("[data-pay-method]").forEach((btn) => {
+          btn.setAttribute("aria-pressed", btn.dataset.payMethod === method ? "true" : "false");
+        });
+        setPayOpen(false);
+        setError("");
+      };
+
+      const onPayClick = (event) => {
+        const option = event.target.closest("[data-pay-method]");
+        if (option) {
+          setPayMethod(option.dataset.payMethod);
+          return true;
+        }
+        if (event.target.closest("[data-pay-toggle]")) {
+          setPayOpen(Boolean(payOptionsEl?.hidden));
+          return true;
+        }
+        return false;
+      };
+
+      /* El aviso de "elige cómo pagar" se retira al primer toque en otra parte */
+      const onDocClick = (event) => {
+        if (!payEl || payEl.contains(event.target)) return;
+        setPayOpen(false);
+      };
+
       const onRequest = () => {
         if (!cta || cta.classList.contains("is-loading")) return;
         if (!destination) {
           setError("Elige primero a dónde quieres ir.");
           input?.focus();
+          return;
+        }
+        /* OBLIGATORIO: sin forma de pago no se pide el mototaxi */
+        if (!payMethod) {
+          setError("Antes de pedir, elige cómo vas a pagar: efectivo o tarjeta.");
+          payEl?.classList.add("mt-pay--pending");
+          /* Abrir el selector ya dispara el auto-posicionamiento correcto */
+          setPayOpen(true);
           return;
         }
         const label = cta.querySelector("span");
@@ -710,11 +872,36 @@ export default {
       };
 
       /* ---------- Arranque ---------- */
+      payEl?.classList.add("mt-pay--pending");
       root.addEventListener("click", onClick);
       input?.addEventListener("input", onInput);
       input?.addEventListener("focus", onFocusSearch);
       cta?.addEventListener("click", onRequest);
       locateBtn?.addEventListener("click", onLocate);
+      document.addEventListener("click", onDocClick);
+
+      /* El selector de pago se resuelve en su propio contenedor antes de que
+         el click suba a la raíz. */
+      payEl?.addEventListener("click", onPayClick);
+
+      root.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !payOptionsEl?.hidden) setPayOpen(false);
+
+        /* Enter en el buscador: busca de inmediato, sin esperar el debounce.
+           Si ya hay resultados, elige el primero — así "sm 22" + Enter resuelve. */
+        if (event.key === "Enter" && event.target === input) {
+          event.preventDefault();
+          clearTimeout(searchTimer);
+          const text = input.value.trim();
+          if (!text) return;
+          const first = resultsEl?.querySelector("[data-result]");
+          if (first && !resultsEl.hidden) {
+            first.click();
+          } else {
+            runSearch(text);
+          }
+        }
+      });
 
       initMap();
       detectLocation();
@@ -728,6 +915,8 @@ export default {
         input?.removeEventListener("focus", onFocusSearch);
         cta?.removeEventListener("click", onRequest);
         locateBtn?.removeEventListener("click", onLocate);
+        document.removeEventListener("click", onDocClick);
+        payEl?.removeEventListener("click", onPayClick);
         markers.forEach((entry) => entry.marker.remove());
         markers = [];
         map?.remove();
