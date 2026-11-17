@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>All Cancún — Todo lo local, en un solo lugar</title>
+  <meta name="description" content="Encuentra viajes, tianguis, comercios, mantenimiento, salud y más. Servicios y negocios locales de Cancún." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0e13" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="All Cancún" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/header.css" />
+  <link rel="stylesheet" href="styles/categories.css" />
+
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="app-header-slot"></div>
+    <main class="screen" id="app-screen"></main>
+  </div>
+
+  <noscript>
+    <p style="padding: 24px; font-family: system-ui, sans-serif;">
+      All Cancún necesita JavaScript activado para funcionar.
+    </p>
+  </noscript>
+</body>
+</html>

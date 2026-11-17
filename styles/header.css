@@ -1,0 +1,205 @@
+/* ==========================================================================
+   All Cancún — Header (marca + acción de instalación)
+   ========================================================================== */
+
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  /* Sangra hasta los bordes de la ventana para que no se vea un marco
+     cuando el app-shell está centrado (max-width). */
+  width: 100vw;
+  max-width: none;
+  height: calc(var(--header-height) + var(--safe-top));
+  padding: var(--safe-top) var(--space-4) 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 14, 19, 0.88) 0%,
+    rgba(11, 14, 19, 0.72) 62%,
+    rgba(11, 14, 19, 0.42) 100%
+  );
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0;
+  outline: 0;
+  box-shadow: none;
+  transition: background-color var(--duration-base) var(--ease-out);
+}
+
+/* Al hacer scroll no cambia nada: mismo fondo, sin borde ni sombra.
+   (Regla mantenida solo para compatibilidad con el toggle de JS) */
+.app-header.is-scrolled {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 14, 19, 0.88) 0%,
+    rgba(11, 14, 19, 0.72) 62%,
+    rgba(11, 14, 19, 0.42) 100%
+  );
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+/* Marca centrada */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.brand__name {
+  font-size: 1.3125rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+  background: linear-gradient(100deg, #ffffff 0%, #d9fff8 40%, #2fd6c4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand__tagline {
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Botón instalar: flotante a la derecha, no desplaza la marca */
+.install-button {
+  display: none;
+  position: fixed;
+  top: calc(var(--safe-top) + 16px);
+  right: max(var(--space-4), calc((100vw - var(--app-max-width)) / 2 + var(--space-4)));
+  z-index: 101;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: #062a28;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  box-shadow: 0 6px 18px -8px rgba(47, 214, 196, 0.9);
+  transition: transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.install-button[data-available="true"] {
+  display: inline-flex;
+}
+
+.install-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Hero de bienvenida (dato local + color) */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: calc(var(--header-height) + var(--space-4)) var(--space-5) var(--space-5);
+  border-radius: var(--radius-xl);
+  color: var(--color-text-inverse);
+  background: linear-gradient(140deg, #1f8f9e 0%, #17626f 45%, #101a2a 100%);
+  box-shadow: 0 20px 40px -22px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -46px;
+  bottom: -70px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.28), transparent 68%);
+  pointer-events: none;
+}
+
+.hero__eyebrow {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero__title {
+  font-size: 1.375rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.025em;
+  line-height: 1.18;
+  max-width: 88%;
+}
+
+.hero__text {
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 92%;
+}
+
+.hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.hero__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.hero__chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+.install-button:active {
+  transform: scale(0.96);
+  background: var(--color-brand-strong);
+}
+
+@media (hover: hover) {
+  .install-button:hover {
+    background: var(--color-brand-strong);
+  }
+}

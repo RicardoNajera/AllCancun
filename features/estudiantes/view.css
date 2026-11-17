@@ -1,0 +1,26 @@
+/* ==========================================================================
+   All Cancún — Estudiantes · estilos exclusivos
+   Solo se cargan al abrir esta categoría. Ninguna otra vista los usa.
+   ========================================================================== */
+
+/* Detalle propio: pista corta de cada paso, a la derecha */
+.est-body .fv-step {
+  align-items: flex-start;
+}
+
+.est-body .fv-step__text {
+  flex: 1 1 auto;
+}
+
+.est-body .fv-step::after {
+  content: attr(data-zone);
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--fv-soft);
+  color: var(--fv-accent);
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}

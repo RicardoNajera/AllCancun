@@ -1,0 +1,390 @@
+/* ==========================================================================
+   All Cancún — Tarjetas de categoría con foto real + carrusel
+   Grid de 2 columnas, tema oscuro inmersivo.
+   ========================================================================== */
+
+.categories {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* Padding lateral mínimo: las carátulas ganan ancho útil */
+  padding: 0 var(--space-2) var(--space-8);
+  /* El contenido arranca pegado arriba: el header translúcido flota encima */
+  margin-top: calc(var(--header-height) * -1);
+}
+
+.categories__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  /* Compensa el padding reducido del contenedor para alinear con las carátulas */
+  padding-inline: var(--space-2);
+}
+
+.categories__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.categories__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Grid — carátulas grandes estilo streaming, una por fila para que
+   los nombres de categoría nunca se corten. */
+.category-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  grid-auto-rows: 1fr;
+  width: 100%;
+}
+
+/* Primera tarjeta (hero) ocupa todo el ancho y es más alta */
+.category-grid > .category-card:first-child {
+  grid-column: 1 / -1;
+}
+
+/* Tarjeta */
+.category-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 248px;
+  padding: var(--space-3);
+  text-align: center;
+  border-radius: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  /* Contenedor de consulta: el título escala según ESTE ancho */
+  container-type: inline-size;
+  transition: transform 320ms var(--ease-out),
+    box-shadow 320ms var(--ease-out),
+    border-color 320ms var(--ease-out),
+    filter 320ms var(--ease-out);
+  animation: card-in 520ms var(--ease-out) both;
+}
+
+/* Hero: primera carátula tipo "destacado de Netflix" */
+.category-grid > .category-card:first-child {
+  min-height: 320px;
+  padding: var(--space-5);
+}
+
+.category-grid > .category-card:first-child .category-card__title {
+  font-size: clamp(1.75rem, 8vw, 2.4rem);
+  letter-spacing: -0.03em;
+}
+
+.category-grid > .category-card:first-child .category-card__caption {
+  font-size: var(--font-size-sm);
+}
+
+.category-grid > .category-card:first-child .category-card__scrim {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 10, 14, 0.05) 0%,
+      rgba(8, 10, 14, 0.42) 45%,
+      rgba(8, 10, 14, 0.95) 100%
+    ),
+    linear-gradient(120deg, var(--card-accent) 0%, transparent 55%);
+}
+
+/* Acento por categoría */
+.category-card {
+  --card-accent: var(--color-brand);
+  --card-soft: var(--color-brand-soft);
+  --card-grad: linear-gradient(135deg, #2fd6c4 0%, #14b8a6 100%);
+  --card-ring: rgba(47, 214, 196, 0.5);
+}
+
+.category-card[data-accent="viajes"] {
+  --card-accent: var(--accent-viajes);
+  --card-soft: var(--accent-viajes-soft);
+  --card-grad: linear-gradient(135deg, #4fa8ff 0%, #2b63d9 100%);
+}
+.category-card[data-accent="tianguis"] {
+  --card-accent: var(--accent-tianguis);
+  --card-soft: var(--accent-tianguis-soft);
+  --card-grad: linear-gradient(135deg, #ffa245 0%, #d96504 100%);
+}
+.category-card[data-accent="comercios"] {
+  --card-accent: var(--accent-comercios);
+  --card-soft: var(--accent-comercios-soft);
+  --card-grad: linear-gradient(135deg, #b98bff 0%, #6b34c9 100%);
+}
+.category-card[data-accent="mantenimiento"] {
+  --card-accent: var(--accent-mantenimiento);
+  --card-soft: var(--accent-mantenimiento-soft);
+  --card-grad: linear-gradient(135deg, #35d6b6 0%, #0c8f7a 100%);
+}
+.category-card[data-accent="mujeres"] {
+  --card-accent: var(--accent-mujeres);
+  --card-soft: var(--accent-mujeres-soft);
+  --card-grad: linear-gradient(135deg, #ff7bb0 0%, #c02d72 100%);
+}
+.category-card[data-accent="hombres"] {
+  --card-accent: var(--accent-hombres);
+  --card-soft: var(--accent-hombres-soft);
+  --card-grad: linear-gradient(135deg, #6fb3e0 0%, #2a6b96 100%);
+}
+.category-card[data-accent="estudiantes"] {
+  --card-accent: var(--accent-estudiantes);
+  --card-soft: var(--accent-estudiantes-soft);
+  --card-grad: linear-gradient(135deg, #ffcf5c 0%, #c98f0b 100%);
+}
+.category-card[data-accent="salud"] {
+  --card-accent: var(--accent-salud);
+  --card-soft: var(--accent-salud-soft);
+  --card-grad: linear-gradient(135deg, #4fe08c 0%, #14a05a 100%);
+}
+.category-card[data-accent="hogar"] {
+  --card-accent: var(--accent-hogar);
+  --card-soft: var(--accent-hogar-soft);
+  --card-grad: linear-gradient(135deg, #b9c3d1 0%, #6b7788 100%);
+}
+.category-card[data-accent="comida"] {
+  --card-accent: var(--accent-comida);
+  --card-soft: var(--accent-comida-soft);
+  --card-grad: linear-gradient(135deg, #ff8a5b 0%, #e0452b 100%);
+}
+
+
+/* ---- Foto de fondo con carrusel ---- */
+.category-card__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+
+.category-card__slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 900ms var(--ease-out), transform 6s linear;
+  will-change: opacity, transform;
+  filter: saturate(1.05) contrast(1.02);
+}
+
+.category-card__slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Gradiente oscuro sobre la foto: legibilidad + acento de categoría */
+.category-card__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 10, 14, 0.1) 0%,
+      rgba(8, 10, 14, 0.55) 52%,
+      rgba(8, 10, 14, 0.94) 100%
+    ),
+    linear-gradient(135deg, var(--card-accent) 0%, transparent 62%);
+  opacity: 0.92;
+}
+
+/* ---- Contenido ---- */
+.category-card__top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.category-card__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--card-grad);
+  color: #080a0f;
+  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.category-card__icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.category-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Ocupa todo el ancho de la carátula y se ajusta al contenido,
+     evitando que el texto flote en una columna estrecha. */
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  text-align: center;
+  /* Sin desbordes: si una palabra no cabe, escala en lugar de salirse */
+  overflow: hidden;
+}
+
+/* Título: se escala al ancho disponible, así la palabra siempre cabe
+   completa y centrada, sea cual sea el nombre de la categoría. */
+.category-card__title {
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+  transition: transform 320ms var(--ease-out);
+  /* Nunca romper palabras: solo saltos entre palabras */
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  /* Escala al contenedor: 8.5cqw equivale a ~1 palabra por ancho */
+  font-size: clamp(0.85rem, 8.5cqi, 1.45rem);
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+/* Sin soporte de container queries: tamaño fijo seguro para "Mantenimiento" */
+@supports not (font-size: 1cqi) {
+  .category-card__title {
+    font-size: clamp(0.8rem, 3.6vw, 1rem);
+    white-space: normal;
+  }
+}
+
+/* Palabras largas: se encogen en lugar de romperse */
+.category-card__title span {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.category-card__caption {
+  font-size: clamp(0.8rem, 3.2vw, 0.9rem);
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.3;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+}
+
+/* Interacción estilo streaming: zoom marcado + brillo de acento */
+.category-card:active {
+  animation: none;
+  transform: scale(0.965);
+  box-shadow: var(--shadow-xs);
+}
+
+@media (hover: hover) {
+  .category-card:hover {
+    transform: translateY(-6px) scale(1.015);
+    box-shadow: 0 26px 50px -22px rgba(0, 0, 0, 0.95),
+      0 0 0 1px var(--card-ring);
+    border-color: var(--card-ring);
+    filter: brightness(1.06);
+    z-index: 2;
+  }
+
+  .category-card:hover .category-card__icon {
+    transform: scale(1.1) rotate(-4deg);
+  }
+
+  .category-card:hover .category-card__slide.is-active {
+    transform: scale(1.07);
+  }
+
+  .category-card:hover .category-card__title {
+    transform: translateY(-1px);
+  }
+}
+
+/* Aparición escalonada */
+.category-card:nth-child(1) { animation-delay: 0ms; }
+.category-card:nth-child(2) { animation-delay: 40ms; }
+.category-card:nth-child(3) { animation-delay: 80ms; }
+.category-card:nth-child(4) { animation-delay: 120ms; }
+.category-card:nth-child(5) { animation-delay: 160ms; }
+.category-card:nth-child(6) { animation-delay: 200ms; }
+.category-card:nth-child(7) { animation-delay: 240ms; }
+.category-card:nth-child(8) { animation-delay: 280ms; }
+.category-card:nth-child(9) { animation-delay: 320ms; }
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Móviles muy compactos */
+@media (max-width: 340px) {
+  .category-card {
+    min-height: 180px;
+    padding: var(--space-3);
+  }
+
+  .category-grid > .category-card:first-child {
+    min-height: 260px;
+  }
+
+  .category-card__title {
+    font-size: 1rem;
+  }
+}
+
+/* Escritorio / tablet ancha: 3 columnas y hero más cinematográfico */
+@media (min-width: 760px) {
+  .category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .category-card {
+    min-height: 260px;
+  }
+
+  .category-grid > .category-card:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+    min-height: 560px;
+  }
+
+  .category-grid > .category-card:first-child .category-card__title {
+    font-size: clamp(2.2rem, 4vw, 3rem);
+  }
+}
+
