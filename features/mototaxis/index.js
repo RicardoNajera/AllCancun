@@ -122,16 +122,10 @@ export default {
 
           <h1 class="mt-sheet__title">¿A dónde vamos?</h1>
 
-          <div class="mt-origin" data-origin-row>
-            <span class="mt-origin__dot" aria-hidden="true"></span>
-            <span class="mt-origin__label">Tu ubicación</span>
-            <span class="mt-origin__value" data-origin-text>Detectando…</span>
-          </div>
-
           <div class="mt-search">
             <span class="mt-search__icon" aria-hidden="true">${pinIcon}</span>
             <input class="mt-search__input" type="text" inputmode="search"
-                   placeholder="¿A dónde vamos?"
+                   placeholder="Busca tu destino"
                    aria-label="Destino" autocomplete="off"
                    data-search-input />
             <span class="mt-search__spinner" data-search-spinner hidden aria-hidden="true"></span>
@@ -222,7 +216,6 @@ export default {
       const tripEl = $("[data-trip]");
       const tokenPanel = $("[data-token-panel]");
       const statusText = $("[data-map-status-text]");
-      const originText = $("[data-origin-text]");
       const quickEl = $("[data-quick]");
 
       let token = getToken();
@@ -290,6 +283,35 @@ export default {
           maxZoom: 15.5,
           duration: 700,
         });
+      const ensureRouteLayers = () => {
+        if (!map || map.getSource("mt-route")) return;
+        map.addSource("mt-route", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        map.addLayer({
+          id: "mt-route-casing",
+          type: "line",
+          source: "mt-route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#000000", "line-width": 9, "line-opacity": 0.28 },
+        });
+        map.addLayer({
+          id: "mt-route-line",
+          type: "line",
+          source: "mt-route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#0a84ff", "line-width": 5 },
+        });
+        map.addLayer({
+          id: "mt-route-glow",
+          type: "line",
+          source: "mt-route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#64d2ff", "line-width": 2.2, "line-opacity": 0.75 },
+        });
+      };
+
       const initMap = async () => {
         try {
           const maplibregl = await loadMapLibre();
@@ -306,28 +328,16 @@ export default {
           });
 
           map.on("load", () => {
-            map.addSource("mt-route", {
-              type: "geojson",
-              data: { type: "FeatureCollection", features: [] },
-            });
-            map.addLayer({
-              id: "mt-route-casing",
-              type: "line",
-              source: "mt-route",
-              layout: { "line-cap": "round", "line-join": "round" },
-              paint: { "line-color": "#0b0e13", "line-width": 8, "line-opacity": 0.55 },
-            });
-            map.addLayer({
-              id: "mt-route-line",
-              type: "line",
-              source: "mt-route",
-              layout: { "line-cap": "round", "line-join": "round" },
-              paint: { "line-color": "#4fa8ff", "line-width": 4.5 },
-            });
+            ensureRouteLayers();
             setStatus("Mapa en vivo · OpenFreeMap");
           });
 
-          map.on("error", () => setStatus("Mapa con problemas de conexión"));
+          // Si el estilo tarda o falla, dejamos las capas listas igual
+          map.once("styledata", ensureRouteLayers);
+          map.on("error", () => {
+            if (!map?.getSource("mt-route")) ensureRouteLayers();
+          });
+
           setMarker("origin", origin);
         } catch {
           setStatus("No se pudo cargar el mapa");
@@ -338,11 +348,9 @@ export default {
       /* ---------- Ubicación ---------- */
       const detectLocation = () => {
         if (!navigator.geolocation) {
-          originText.textContent = "Ubicación no disponible";
           setError("Tu navegador no permite geolocalización. Escribe tu destino igual.");
           return;
         }
-        originText.textContent = "Detectando…";
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             const { longitude: lng, latitude: lat } = pos.coords;
@@ -350,12 +358,10 @@ export default {
             clearMarkers("origin");
             setMarker("origin", origin, "Tu ubicación");
             map?.flyTo({ center: [lng, lat], zoom: 14.5, duration: 900 });
-            originText.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setError("");
             if (destination) planTrip();
           },
           () => {
-            originText.textContent = "Cancún centro (por defecto)";
             setError("No leímos tu ubicación. Usamos el centro de Cancún como origen.");
           },
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
@@ -468,7 +474,10 @@ export default {
         searchController = new AbortController();
         if (spinner) spinner.hidden = false;
         try {
-          const places = await searchPlaces(text, token, { near: origin });
+          const places = await searchPlaces(text, token, {
+            near: origin,
+            signal: searchController.signal,
+          });
           if (destroyed) return;
           renderResults(places);
           setError(places.length ? "" : "Sin resultados. Intenta con otra dirección.");
@@ -547,10 +556,24 @@ export default {
       const onLocate = () => detectLocation();
       const locateBtn = root.querySelector('[data-action="locate"]');
 
+      let askedLocation = false;
+      const onFocusSearch = () => {
+        if (askedLocation) return;
+        askedLocation = true;
+        if (!navigator.permissions) return;
+        navigator.permissions
+          .query({ name: "geolocation" })
+          .then((p) => {
+            if (p.state === "prompt") detectLocation();
+          })
+          .catch(() => {});
+      };
+
       /* ---------- Arranque ---------- */
       setTokenState(Boolean(token));
       root.addEventListener("click", onClick);
       input?.addEventListener("input", onInput);
+      input?.addEventListener("focus", onFocusSearch);
       cta?.addEventListener("click", onRequest);
       locateBtn?.addEventListener("click", onLocate);
       tokenForm?.addEventListener("submit", onTokenSubmit);
@@ -564,6 +587,7 @@ export default {
         searchController?.abort();
         root.removeEventListener("click", onClick);
         input?.removeEventListener("input", onInput);
+        input?.removeEventListener("focus", onFocusSearch);
         cta?.removeEventListener("click", onRequest);
         locateBtn?.removeEventListener("click", onLocate);
         tokenForm?.removeEventListener("submit", onTokenSubmit);

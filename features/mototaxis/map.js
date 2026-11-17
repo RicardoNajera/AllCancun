@@ -48,6 +48,10 @@ export function loadMapLibre() {
   if (libPromise) return libPromise;
 
   libPromise = new Promise((resolve, reject) => {
+    const fail = () => {
+      libPromise = null;
+      reject(new Error("No se pudo cargar el mapa"));
+    };
     if (!document.querySelector("link[data-maplibre]")) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -55,10 +59,10 @@ export function loadMapLibre() {
       link.dataset.maplibre = "css";
       document.head.appendChild(link);
     }
-    const existing = document.querySelector("script[data-maplibre]");
+    const existing = document.querySelector('script[data-maplibre="js"]');
     if (existing) {
       existing.addEventListener("load", () => resolve(window.maplibregl));
-      existing.addEventListener("error", () => reject(new Error("maplibre")));
+      existing.addEventListener("error", fail);
       return;
     }
     const script = document.createElement("script");
@@ -66,7 +70,7 @@ export function loadMapLibre() {
     script.async = true;
     script.dataset.maplibre = "js";
     script.onload = () => resolve(window.maplibregl);
-    script.onerror = () => reject(new Error("No se pudo cargar el mapa"));
+    script.onerror = fail;
     document.head.appendChild(script);
   });
 
@@ -74,7 +78,7 @@ export function loadMapLibre() {
 }
 
 /* ---------- Mapbox: Geocoding ---------- */
-export async function searchPlaces(query, token, { near } = {}) {
+export async function searchPlaces(query, token, { near, signal } = {}) {
   if (!token) throw new Error("token");
   const url = new URL("https://api.mapbox.com/geocoding/v5/mapbox.places/" +
     encodeURIComponent(query) + ".json");
@@ -85,7 +89,7 @@ export async function searchPlaces(query, token, { near } = {}) {
   url.searchParams.set("proximity", near ? `${near.lng},${near.lat}` : `${CANCUN.lng},${CANCUN.lat}`);
   url.searchParams.set("types", DETAILS);
 
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(res.status === 401 ? "token" : `geocoding ${res.status}`);
   const data = await res.json();
   return (data.features || []).map((f) => ({

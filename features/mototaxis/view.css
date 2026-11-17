@@ -78,7 +78,7 @@
 /* ---- Mapa ---- */
 .mt-map {
   position: relative;
-  height: 232px;
+  height: 300px;
   margin-top: calc(var(--space-6) * -1);
   overflow: hidden;
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
@@ -89,9 +89,10 @@
 .mt-map__veil {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background:
-    radial-gradient(120% 80% at 50% 0%, transparent 0%, rgba(11, 14, 19, 0.55) 70%),
-    linear-gradient(180deg, rgba(11, 14, 19, 0.5) 0%, rgba(11, 14, 19, 0.15) 55%, #0b0e13 100%);
+    linear-gradient(180deg, rgba(11, 14, 19, 0.62) 0%, rgba(11, 14, 19, 0) 26%),
+    linear-gradient(0deg, rgba(11, 14, 19, 0.9) 0%, rgba(11, 14, 19, 0.35) 14%, rgba(11, 14, 19, 0) 34%);
 }
 
 .mt-map__grid {
@@ -184,14 +185,7 @@
 
 .mt-map__canvas .maplibregl-canvas { outline: none; }
 
-.mt-map__veil {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(11, 14, 19, 0.72) 0%, rgba(11, 14, 19, 0) 26%),
-    linear-gradient(0deg, #0b0e13 0%, rgba(11, 14, 19, 0) 22%);
-}
+.mt-map__canvas .maplibregl-ctrl-attrib { display: none; }
 
 .mt-map__status {
   position: absolute;
@@ -335,8 +329,23 @@
   margin-top: calc(var(--space-6) * -1);
   padding: var(--space-2) var(--space-4) var(--space-6);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background: var(--color-bg);
+  background: rgba(14, 17, 23, 0.72);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.45);
   animation: mt-sheet-up 520ms var(--ease-out) 90ms both;
+}
+
+/* Halo superior tipo Apple: luz suave que separa el cristal del mapa */
+.mt-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  pointer-events: none;
 }
 
 @keyframes mt-sheet-up {
@@ -369,16 +378,20 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 12px var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  padding: 14px var(--space-4);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(0, 0, 0, 0.22);
+  transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
 }
 
 .mt-search:focus-within {
-  border-color: var(--fv-accent);
-  box-shadow: 0 0 0 3px var(--fv-soft);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .mt-search__icon {
@@ -446,44 +459,6 @@
   transform: scale(0.95);
   border-color: var(--fv-accent);
   background: var(--fv-soft);
-}
-
-/* ---- Origen ---- */
-.mt-origin {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 9px var(--space-3);
-  border-radius: var(--radius-sm);
-  background: var(--fv-soft);
-  border: 1px solid transparent;
-}
-
-.mt-origin__dot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--fv-accent);
-  box-shadow: 0 0 8px var(--fv-accent);
-}
-
-.mt-origin__label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-  flex: 0 0 auto;
-}
-
-.mt-origin__value {
-  flex: 1 1 auto;
-  min-width: 0;
-  text-align: right;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ---- Spinner del buscador ---- */
