@@ -221,6 +221,74 @@
   }
 }
 
+/* ---- Mototaxi rondando (simulación) ----
+   Círculo compacto que flota sobre el mapa. La animación va en el svg para no
+   romper el transform inline que usa MapLibre para posicionar el marcador. */
+.mt-rider {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: block;
+  pointer-events: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+.mt-rider svg {
+  width: 100%;
+  height: 100%;
+  animation: mt-rider-float 2.8s ease-in-out infinite;
+}
+
+@keyframes mt-rider-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-4px) rotate(1.5deg); }
+}
+
+/* La moto que viene hacia ti */
+.mt-rider.is-approaching {
+  z-index: 4;
+}
+
+.mt-rider.is-approaching::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 2px solid #64d2ff;
+  animation: mt-ping 1.4s ease-out infinite;
+}
+
+/* Tu conductor asignado: anillo fijo y latido suave */
+.mt-rider.is-assigned {
+  z-index: 5;
+}
+
+.mt-rider.is-assigned::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #34c759;
+  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.22);
+}
+
+.mt-rider.is-assigned svg {
+  animation: mt-rider-idle 1.8s ease-in-out infinite;
+}
+
+@keyframes mt-rider-idle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mt-rider svg,
+  .mt-rider.is-approaching::after,
+  .mt-rider.is-assigned svg {
+    animation: none;
+  }
+}
+
 .mt-map__eta {
   position: absolute;
   left: 50%;
