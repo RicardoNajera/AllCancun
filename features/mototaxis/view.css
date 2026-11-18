@@ -236,12 +236,35 @@
 .mt-rider svg {
   width: 100%;
   height: 100%;
-  animation: mt-rider-float 2.8s ease-in-out infinite;
+  /* Rumbo de la moto. Se rota el <svg> interno para no pisar el
+     transform inline que MapLibre aplica al elemento del marcador. */
+  transition: transform 0.4s ease;
+  transform: rotate(var(--mt-heading, 0deg));
 }
 
-@keyframes mt-rider-float {
-  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
-  50% { transform: translateY(-4px) rotate(1.5deg); }
+@media (prefers-reduced-motion: reduce) {
+  .mt-rider svg { transition: none; transform: none; }
+}
+
+/* Entrada y salida: la moto aparece y se va con fundido suave,
+   para que el recambio no se sienta como un salto. */
+.mt-rider.is-entering {
+  animation: mt-rider-appear 0.5s ease-out both;
+}
+
+@keyframes mt-rider-appear {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.mt-rider.is-leaving {
+  animation: mt-rider-vanish 0.42s ease-in both;
+  pointer-events: none;
+}
+
+@keyframes mt-rider-vanish {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.5); }
 }
 
 /* La moto que viene hacia ti */
@@ -272,13 +295,15 @@
   box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.22);
 }
 
+/* Conductor asignado: se queda quieto esperándote, con un pulso suave
+   que combina la rotación del rumbo con un pequeño latido. */
 .mt-rider.is-assigned svg {
   animation: mt-rider-idle 1.8s ease-in-out infinite;
 }
 
 @keyframes mt-rider-idle {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.07); }
+  0%, 100% { transform: rotate(var(--mt-heading, 0deg)) scale(1); }
+  50% { transform: rotate(var(--mt-heading, 0deg)) scale(1.07); }
 }
 
 @media (prefers-reduced-motion: reduce) {

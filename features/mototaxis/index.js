@@ -456,15 +456,21 @@ export default {
       };
 
       /* ---------- Mototaxis rondando (simulación) ----------
-       * Al pedir, aparecen motos aleatorias en un radio cercano al origen.
-       * La más cercana se dirige hacia ti y se queda como conductor asignado.
-       * Todo se mueve con interpolación suave (requestAnimationFrame) para que
-       * no salten sobre el mapa. */
-      const RIDER_RADIUS_M = 900; // radio de aparición alrededor del origen
+       * Las motos circulan por CALLES REALES: se leen los trazados viales del
+       * estilo vectorial (OpenFreeMap usa el esquema OpenMapTiles, capa "road")
+       * y cada moto se desliza por tramos válidos cercanos a ti.
+       * Ciclo de vida: cada moto vive unos segundos, se desvanece y otra
+       * aparece en un punto distinto — así la escena nunca se congela. */
+      const RIDER_MIN_M = 1500; // distancia mínima de aparición
+      const RIDER_MAX_M = 4000; // distancia máxima de aparición
+      const ROAD_LAYERS = ["road", "transportation", "road_network", "roads"];
       let riderAnim = 0;
+      let glideAnim = 0; // animaciones puntuales (acercar la moto asignada)
       let riderLoopOn = false;
+      let riderSpawner = 0;
       let riders = [];
       let assignedRider = null;
+      let roadNetwork = null; // { segments: [{a,b,len}], builtAt }
 
       /* Metros → desplazamiento en grados (aprox. en Cancún) */
       const offsetLatLng = (point, meters, bearingRad) => {
@@ -473,45 +479,147 @@ export default {
         return { lng: point.lng + dLng, lat: point.lat + dLat };
       };
 
+      /* Distancia entre dos puntos en metros (Haversine) */
+      const metersBetween = (a, b) => {
+        const R = 6371000;
+        const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+        const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+        const la1 = (a.lat * Math.PI) / 180;
+        const la2 = (b.lat * Math.PI) / 180;
+        const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(h));
+      };
+
       const stopRiderAnim = () => {
         if (riderAnim) cancelAnimationFrame(riderAnim);
+        if (glideAnim) cancelAnimationFrame(glideAnim);
         riderAnim = 0;
+        glideAnim = 0;
         riderLoopOn = false;
       };
 
-      /* Bucle continuo: hace vagar las motos libres. Un solo rAF para todas. */
-      const startRiderLoop = () => {
-        if (riderLoopOn) return;
-        riderLoopOn = true;
-        const tick = () => {
-          if (!riderLoopOn || destroyed) return;
-          const t = performance.now() / 1000;
-          riders.forEach((rider, index) => {
-            if (rider === assignedRider || rider.gliding || !rider.home) return;
-            const r = 18 + index * 6;
-            const angle = t * 0.45 + rider.phase;
-            const lat = rider.home.lat + (Math.sin(angle) * r) / 111320;
-            const lng =
-              rider.home.lng +
-              (Math.cos(angle) * r) / (111320 * Math.cos((rider.home.lat * Math.PI) / 180));
-            rider.marker.setLngLat([lng, lat]);
-            rider.lat = lat;
-            rider.lng = lng;
+      const stopRiderSpawner = () => {
+        if (riderSpawner) clearTimeout(riderSpawner);
+        riderSpawner = 0;
+      };
+
+      /* Devuelve la primera capa vial que exista en el estilo cargado */
+      const roadLayerId = () => {
+        if (!map) return null;
+        const layers = map.getStyle()?.layers || [];
+        for (const name of ROAD_LAYERS) {
+          const found = layers.find((l) => l.id === name || l.id.startsWith(`${name}_`));
+          if (found) return found.id;
+        }
+        const anyRoad = layers.find((l) => /road|street|highway/i.test(l.id));
+        return anyRoad?.id || null;
+      };
+
+      /* Capas/source-layers viales disponibles según el esquema del estilo
+       * (OpenFreeMap/OpenMapTiles usan "transportation"; otros varían). */
+      const roadSourceInfo = () => {
+        const guess = ["transportation", "road", "roads", "streets"];
+        const fallback = { sources: ["openmaptiles", "composite"], layers: guess };
+        if (!map) return fallback;
+        const style = map.getStyle() || {};
+        const sources = [];
+        const layers = new Set(guess);
+        Object.entries(style.sources || {}).forEach(([id, src]) => {
+          if (src?.type !== "vector") return;
+          sources.push(id);
+          (src.vector_layers || []).forEach((vl) => {
+            if (/transportation|road|street/i.test(vl.id)) layers.add(vl.id);
           });
-          riderAnim = requestAnimationFrame(tick);
+        });
+        return { sources: sources.length ? sources : fallback.sources, layers: [...layers] };
+      };
+
+      /* Extrae los segmentos de calle visibles y los guarda en [lng, lat] */
+      const buildRoadNetwork = () => {
+        if (!map) return null;
+        if (roadNetwork && Date.now() - roadNetwork.builtAt < 45000) return roadNetwork;
+
+        const { sources, layers: sourceLayers } = roadSourceInfo();
+
+        let features = [];
+        /* 1º: la fuente vectorial completa da TODAS las vías del área cargada
+           (queryRenderedFeatures solo devuelve las visibles y ya filtradas). */
+        for (const sourceId of sources) {
+          for (const sl of sourceLayers) {
+            try {
+              const extra = map.querySourceFeatures(sourceId, { sourceLayer: sl });
+              if (extra?.length > features.length) features = extra;
+            } catch {
+              /* esquema distinto: se prueba el siguiente */
+            }
+          }
+          if (features.length > 40) break;
+        }
+
+        /* 2º respaldo: lo dibujado en pantalla */
+        if (!features.length) {
+          const layerId = roadLayerId();
+          if (layerId) {
+            try {
+              features = map.queryRenderedFeatures({ layers: [layerId] });
+            } catch {
+              features = [];
+            }
+          }
+        }
+
+        const segments = [];
+        features.forEach((f) => {
+          const g = f.geometry;
+          if (!g) return;
+          const lines =
+            g.type === "LineString" ? [g.coordinates] : g.type === "MultiLineString" ? g.coordinates : [];
+          lines.forEach((line) => {
+            for (let i = 0; i < line.length - 1; i += 1) {
+              const a = { lng: line[i][0], lat: line[i][1] };
+              const b = { lng: line[i + 1][0], lat: line[i + 1][1] };
+              const len = metersBetween(a, b);
+              if (len > 8 && len < 6000) segments.push({ a, b, len });
+            }
+          });
+        });
+
+        roadNetwork = { segments, builtAt: Date.now() };
+        return roadNetwork;
+      };
+
+      /* Punto aleatorio sobre una calle, a una distancia dada de `near` */
+      const randomRoadPoint = (near, minM, maxM) => {
+        const net = buildRoadNetwork();
+        if (!net || !net.segments.length) return null;
+        const candidates = net.segments.filter((s) => {
+          const mid = { lng: (s.a.lng + s.b.lng) / 2, lat: (s.a.lat + s.b.lat) / 2 };
+          const d = metersBetween(near, mid);
+          return d >= minM && d <= maxM;
+        });
+        if (!candidates.length) return null;
+        const seg = candidates[Math.floor(Math.random() * candidates.length)];
+        const t = Math.random();
+        return {
+          point: {
+            lng: seg.a.lng + (seg.b.lng - seg.a.lng) * t,
+            lat: seg.a.lat + (seg.b.lat - seg.a.lat) * t,
+          },
+          segment: seg,
         };
-        riderAnim = requestAnimationFrame(tick);
       };
 
-      const clearRiders = () => {
-        stopRiderAnim();
-        riders.forEach((r) => r.marker.remove());
-        riders = [];
-        assignedRider = null;
-        root.classList.remove("mt-is-tracking");
+      /* Siguiente tramo conectado al punto `anchor` donde llegó la moto */
+      const neighborSegment = (net, seg, anchor) => {
+        if (!anchor) return null;
+        const same = (p) => Math.abs(p.lng - anchor.lng) < 0.0004 && Math.abs(p.lat - anchor.lat) < 0.0004;
+        const pool = net.segments.filter((s) => s !== seg && (same(s.a) || same(s.b)));
+        if (!pool.length) return null;
+        const next = pool[Math.floor(Math.random() * pool.length)];
+        return same(next.a) ? { seg: next, from: next.a, to: next.b } : { seg: next, from: next.b, to: next.a };
       };
 
-      /* Pin de moto en el mapa, con la clase de "asignado" si es tu conductor */
+      /* Pin de moto en el mapa */
       const createRider = (point) => {
         if (!map || !window.maplibregl) return null;
         const el = document.createElement("div");
@@ -522,28 +630,136 @@ export default {
         const marker = new window.maplibregl.Marker({ element: el, anchor: "center" })
           .setLngLat([point.lng, point.lat])
           .addTo(map);
-        return { el, marker, lat: point.lat, lng: point.lng };
+        return { el, marker, lat: point.lat, lng: point.lng, heading: 0, progress: 0 };
       };
 
-      /* Coloca N motos en posiciones aleatorias alrededor del origen */
-      const spawnRiders = (near, count = 4) => {
-        clearRiders();
-        if (!map || !window.maplibregl) return [];
-        for (let i = 0; i < count; i += 1) {
-          const bearing = Math.random() * Math.PI * 2;
-          const meters = 250 + Math.random() * (RIDER_RADIUS_M - 250);
-          const spot = offsetLatLng(near, meters, bearing);
-          const rider = createRider(spot);
-          if (!rider) continue;
-          rider.element = rider.el;
-          rider.home = { ...spot };
-          rider.phase = Math.random() * Math.PI * 2;
-          riders.push(rider);
-        }
-        return riders;
+      /* Aparece una moto en una calle lejana (1.5–4 km) */
+      const spawnOneRider = (near) => {
+        if (!map || destroyed) return null;
+        const spot = randomRoadPoint(near, RIDER_MIN_M, RIDER_MAX_M);
+        if (!spot) return null;
+        const rider = createRider(spot.point);
+        if (!rider) return null;
+        rider.segment = spot.segment;
+        /* Arranca justo en el punto elegido de la calle, avanzando hacia un extremo */
+        const reverse = Math.random() < 0.5;
+        rider.from = reverse ? spot.segment.b : spot.segment.a;
+        rider.to = reverse ? spot.segment.a : spot.segment.b;
+        const largoRestante = metersBetween(spot.point, rider.to);
+        rider.progress = 1 - largoRestante / Math.max(1, spot.segment.len);
+        rider.ttl = 12000 + Math.random() * 12000; // vive 12–24 s
+        rider.bornAt = performance.now();
+        rider.el.classList.add("is-entering");
+        setTimeout(() => rider.el?.classList.remove("is-entering"), 500);
+        riders.push(rider);
+        return rider;
       };
 
-      /* Desliza un marcador hasta un destino con easeInOutCubic */
+      /* Se retira una moto: fundido y limpieza del marcador */
+      const retireRider = (rider) => {
+        rider.el.classList.add("is-leaving");
+        const el = rider.el;
+        const marker = rider.marker;
+        setTimeout(() => {
+          el.remove();
+          marker.remove();
+        }, 420);
+      };
+
+      /* Recambio: una se va, otra llega. Mantiene la escena viva. */
+      const scheduleRiderSpawn = (near) => {
+        stopRiderSpawner();
+        riderSpawner = setTimeout(() => {
+          if (destroyed || !root.classList.contains("mt-is-simulating")) return;
+          const free = riders.filter((r) => r !== assignedRider);
+          if (free.length < 5) spawnOneRider(near);
+          scheduleRiderSpawn(near);
+        }, 4000 + Math.random() * 4000);
+      };
+
+      /* Bucle de movimiento: cada moto avanza por su tramo de calle */
+      const startRiderLoop = () => {
+        riderLoopOn = true;
+        let last = performance.now();
+
+        const tick = (now) => {
+          if (!riderLoopOn || destroyed) return;
+          const dt = Math.min(64, Math.max(0, now - last));
+          last = now;
+
+          for (let i = riders.length - 1; i >= 0; i -= 1) {
+            const rider = riders[i];
+            if (rider === assignedRider || rider.gliding) continue;
+
+            /* Fin de vida: desaparece y se reprograma otra */
+            if (now - rider.bornAt > rider.ttl) {
+              riders.splice(i, 1);
+              retireRider(rider);
+              continue;
+            }
+
+            if (!rider.segment || !rider.from || !rider.to) continue;
+
+            /* ~8 m/s (29 km/h), ritmo de moto urbana */
+            const tramo = metersBetween(rider.from, rider.to);
+            rider.progress += (8 * dt) / Math.max(1, tramo);
+
+            if (rider.progress >= 1) {
+              /* Sigue por una calle conectada al punto donde llegó */
+              const net = buildRoadNetwork();
+              const next = net ? neighborSegment(net, rider.segment, rider.to) : null;
+              if (next) {
+                rider.segment = next.seg;
+                rider.from = next.from;
+                rider.to = next.to;
+                rider.progress = 0;
+              } else {
+                /* Calle sin continuación: se muda a otra calle del rango */
+                const spot = randomRoadPoint(origin, RIDER_MIN_M, RIDER_MAX_M);
+                if (spot) {
+                  rider.segment = spot.segment;
+                  rider.from = spot.segment.a;
+                  rider.to = spot.segment.b;
+                  rider.progress = 0;
+                  rider.marker.setLngLat([spot.point.lng, spot.point.lat]);
+                } else {
+                  rider.progress = 0;
+                }
+                continue;
+              }
+            }
+
+            const p = Math.max(0, Math.min(1, rider.progress));
+            const lng = rider.from.lng + (rider.to.lng - rider.from.lng) * p;
+            const lat = rider.from.lat + (rider.to.lat - rider.from.lat) * p;
+            rider.marker.setLngLat([lng, lat]);
+            rider.lat = lat;
+            rider.lng = lng;
+
+            /* Orienta el pin hacia el avance */
+            const angle =
+              (Math.atan2(rider.to.lng - rider.from.lng, rider.to.lat - rider.from.lat) * 180) / Math.PI;
+            if (Math.abs(angle - rider.heading) > 10) {
+              rider.heading = angle;
+              rider.el.style.setProperty("--mt-heading", `${angle.toFixed(1)}deg`);
+            }
+          }
+
+          riderAnim = requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      };
+
+      const clearRiders = () => {
+        stopRiderAnim();
+        stopRiderSpawner();
+        riders.forEach((r) => r.marker.remove());
+        riders = [];
+        assignedRider = null;
+        root.classList.remove("mt-is-tracking", "mt-is-simulating");
+      };
+
+
       const glideRider = (rider, to, durationMs = 2200) =>
         new Promise((resolve) => {
           const from = { lat: rider.lat, lng: rider.lng };
@@ -562,27 +778,58 @@ export default {
             rider.marker.setLngLat([lng, lat]);
             rider.lat = lat;
             rider.lng = lng;
-            if (p < 1) riderAnim = requestAnimationFrame(step);
+            if (p < 1) glideAnim = requestAnimationFrame(step);
             else {
               rider.gliding = false;
               resolve();
             }
           };
-          riderAnim = requestAnimationFrame(step);
+          glideAnim = requestAnimationFrame(step);
         });
 
-      /* Distancia entre dos puntos en metros (Haversine) */
-      const metersBetween = (a, b) => {
-        const R = 6371000;
-        const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-        const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-        const la1 = (a.lat * Math.PI) / 180;
-        const la2 = (b.lat * Math.PI) / 180;
-        const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
-        return 2 * R * Math.asin(Math.sqrt(h));
-      };
+      /* Recorre una ruta completa (varios puntos) calculando distancia acumulada,
+       * así la velocidad es constante y no se frena en las curvas. */
+      const glideAlongPath = (rider, path, durationMs = 6000) =>
+        new Promise((resolve) => {
+          const pts = path.map((p) => ({ lat: p.lat, lng: p.lng }));
+          const legs = [];
+          let total = 0;
+          for (let i = 0; i < pts.length - 1; i += 1) {
+            const len = metersBetween(pts[i], pts[i + 1]);
+            legs.push({ from: pts[i], to: pts[i + 1], len, startAt: total });
+            total += len;
+          }
+          if (!legs.length || !total) return resolve();
 
-      /* Elige la moto más cercana, la acerca y la marca como asignada */
+          const start = performance.now();
+          rider.gliding = true;
+          const step = (now) => {
+            if (destroyed) {
+              rider.gliding = false;
+              resolve();
+              return;
+            }
+            const p = Math.min(1, (now - start) / durationMs);
+            const traveled = total * p;
+            const leg = legs.find((l) => traveled <= l.startAt + l.len) || legs[legs.length - 1];
+            const t = leg.len ? Math.min(1, (traveled - leg.startAt) / leg.len) : 1;
+            const lat = leg.from.lat + (leg.to.lat - leg.from.lat) * t;
+            const lng = leg.from.lng + (leg.to.lng - leg.from.lng) * t;
+            rider.marker.setLngLat([lng, lat]);
+            rider.lat = lat;
+            rider.lng = lng;
+            const angle = (Math.atan2(leg.to.lng - leg.from.lng, leg.to.lat - leg.from.lat) * 180) / Math.PI;
+            rider.el.style.setProperty("--mt-heading", `${angle.toFixed(1)}deg`);
+            if (p < 1) glideAnim = requestAnimationFrame(step);
+            else {
+              rider.gliding = false;
+              resolve();
+            }
+          };
+          glideAnim = requestAnimationFrame(step);
+        });
+
+      /* Elige la moto más cercana, la acerca POR CALLES y la marca asignada */
       const assignNearestRider = async (near) => {
         if (!riders.length) return null;
         let best = null;
@@ -596,14 +843,40 @@ export default {
         });
         if (!best) return null;
 
-        /* La ETA se calcula con la distancia REAL de origen, antes de mover */
+        /* La ETA se calcula con la distancia real de origen, antes de mover */
         const startDistance = bestDist;
-        stopRiderAnim();
+        /* OJO: no se detiene el bucle global. Solo esta moto se excluye del
+           bucle con `gliding`, para que las demás sigan circulando. */
         best.el.classList.add("is-approaching");
-        const stop = offsetLatLng(near, 60, Math.random() * Math.PI * 2);
-        await glideRider(best, stop, 2400);
+
+        /* Intenta traerla por calles reales; si no hay token, cae a línea recta */
+        best.gliding = true;
+        let path = null;
+        const tk = tokenActual();
+        if (tk) {
+          try {
+            const ruta = await fetchRoute(best, near, tk);
+            if (ruta?.geometry?.coordinates?.length) {
+              path = ruta.geometry.coordinates.map((c) => ({ lng: c[0], lat: c[1] }));
+            }
+          } catch {
+            path = null;
+          }
+        }
+        if (destroyed) {
+          best.gliding = false;
+          return null;
+        }
+
+        if (path && path.length > 1) {
+          await glideAlongPath(best, path, Math.min(9000, Math.max(3000, startDistance * 3)));
+        } else {
+          const stop = offsetLatLng(near, 60, Math.random() * Math.PI * 2);
+          await glideRider(best, stop, 2400);
+        }
         if (destroyed) return null;
 
+        best.gliding = false;
         best.el.classList.remove("is-approaching");
         best.el.classList.add("is-assigned");
         best.marker.setPopup(
@@ -1034,29 +1307,43 @@ export default {
         cta.classList.add("is-loading");
         label.textContent = "Buscando tu mototaxi…";
 
-        /* Simulación: aparecen motos rondando cerca de ti, la más cercana
-           se acerca y queda asignada. No depende del token de Mapbox. */
+        /* Simulación: las motos circulan por calles reales a 1.5–4 km.
+           Se van renovando solas; la más cercana viene hacia ti. */
         const near = { lat: origin.lat, lng: origin.lng };
-        const count = 3 + Math.floor(Math.random() * 3); // 3 a 5 motos
-        spawnRiders(near, count);
-        startRiderLoop();
-        if (priceEl) priceEl.textContent = "…";
+        root.dataset.mtNear = JSON.stringify(near);
+        clearRiders();
+        root.classList.add("mt-is-simulating");
 
-        assignNearestRider(near).then((rider) => {
+        /* Al pedir, se abre el plano: a 1.5–4 km las calles quedarían fuera
+           de cuadro con el zoom de detalle, así que se aleja un poco. */
+        if (map) {
+          map.flyTo({ center: [near.lng, near.lat], zoom: 13.1, duration: 900, essential: true });
+        }
+
+        /* Arranque: se espera a que el estilo tenga calles cargadas */
+        const boot = () => {
           if (destroyed) return;
-          cta.classList.remove("is-loading");
-          if (!rider) {
-            /* Sin mapa no hay animación: se asigna de todos modos */
-            cta.classList.add("is-done");
-            label.textContent = "¡Mototaxi asignado!";
-            if (priceEl) priceEl.textContent = "3 min";
+          const net = buildRoadNetwork();
+          if (!net || !net.segments.length) {
+            riderSpawner = setTimeout(boot, 1200);
             return;
           }
-          cta.classList.add("is-done");
-          label.textContent = "¡Mototaxi asignado!";
-          const minutos = Math.max(1, Math.round(((rider.startDistance || 300) / 1000) * 2.2) + 2);
-          if (priceEl) priceEl.textContent = `${minutos} min`;
-        });
+          const iniciales = 3 + Math.floor(Math.random() * 2); // 3-4
+          for (let i = 0; i < iniciales; i += 1) spawnOneRider(near);
+          startRiderLoop();
+          scheduleRiderSpawn(near);
+          assignNearestRider(near).then((rider) => {
+            if (destroyed) return;
+            cta.classList.remove("is-loading");
+            cta.classList.add("is-done");
+            label.textContent = "¡Mototaxi asignado!";
+            if (priceEl) {
+              const km = (rider?.startDistance || 1500) / 1000;
+              priceEl.textContent = `${Math.max(3, Math.round(km * 2.2) + 2)} min`;
+            }
+          });
+        };
+        boot();
       };
 
       /* ---------- Botón de mapa: centrar en mi ubicación ---------- */
