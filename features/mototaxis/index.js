@@ -336,6 +336,12 @@ export default {
       const payOptionsEl = $("[data-pay-options]");
 
       let token = getToken();
+      /* En Android el token puede agregarse después de montar la vista
+         (config.local.js nueva o ?mapbox=...). Se reintenta leerlo. */
+      const tokenActual = () => {
+        if (!token) token = getToken();
+        return token;
+      };
       let map = null;
       let markers = [];
       let routeData = null;
@@ -608,12 +614,12 @@ export default {
 
       const planTrip = async () => {
         if (!destination) return;
-        if (!token) {
+        if (!tokenActual()) {
           setError("Agrega tu token de Mapbox para calcular la ruta.");
           return;
         }
         try {
-          routeData = await fetchRoute(origin, destination.center, token);
+          routeData = await fetchRoute(origin, destination.center, tokenActual());
           if (destroyed) return;
           drawRoute(routeData.geometry);
           fitRoute(routeData.geometry);
@@ -700,7 +706,7 @@ export default {
         searchController = new AbortController();
         if (spinner) spinner.hidden = false;
         try {
-          const places = await searchPlaces(text, token, {
+          const places = await searchPlaces(text, tokenActual(), {
             near: origin,
             signal: searchController.signal,
           });
