@@ -185,6 +185,53 @@ export function stepsFor() {
   return { key: "other", ...STEPS.other };
 }
 
+/* ---- Diagnóstico de instalabilidad ---- */
+
+/**
+ * Revisa los criterios que Chrome exige y devuelve qué falta. Sirve para
+ * mostrar un motivo real en vez de instrucciones genéricas.
+ */
+export async function diagnose() {
+  const problems = [];
+  const p = platform();
+
+  if (!window.isSecureContext) problems.push("La página debe abrirse con https.");
+
+  try {
+    const link = document.querySelector('link[rel="manifest"]');
+    if (!link) {
+      problems.push("Falta el archivo de configuración de la app (manifest).");
+    } else {
+      const res = await fetch(link.href, { cache: "no-store" });
+      if (!res.ok) problems.push("El manifest no carga.");
+      else {
+        const m = await res.json();
+        if (!m.name || !m.short_name) problems.push("El manifest no tiene nombre.");
+        if (!m.start_url) problems.push("El manifest no tiene start_url.");
+        if (!["standalone", "fullscreen", "minimal-ui"].includes(m.display))
+          problems.push("display debe ser standalone.");
+        const big = (m.icons || []).filter((i) => /192|512/.test(i.sizes || ""));
+        if (!big.length) problems.push("Falta un ícono de 192 o 512 px.");
+      }
+    }
+  } catch {
+    problems.push("No se pudo leer el manifest.");
+  }
+
+  if (!("serviceWorker" in navigator)) {
+    problems.push("Este navegador no soporta apps instalables.");
+  } else {
+    const regs = await navigator.serviceWorker.getRegistrations().catch(() => []);
+    const active = regs.some((r) => r.active || r.waiting || r.installing);
+    if (!active) problems.push("El service worker aún no está activo. Recarga la página.");
+  }
+
+  if (p.isIOS) problems.push("iPhone y iPad no permiten instalar desde un botón.");
+  if (p.isFirefox) problems.push("Firefox no permite instalar apps web.");
+
+  return problems;
+}
+
 /* ---- Preferencia de ocultar ---- */
 
 export const isHidden = () => {

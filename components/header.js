@@ -19,6 +19,7 @@ import {
   stepsFor,
   tryNativeMenu,
   waitForPrompt,
+  diagnose,
 } from "../features/shared/install.js";
 
 const escape = (value = "") =>
@@ -137,6 +138,22 @@ function initInstallButton(mount) {
     sheet.querySelector(".install-sheet__panel").focus?.();
   };
 
+  /* Reemplaza los pasos por el motivo concreto de por qué no se puede */
+  const showBlocker = (blockers) => {
+    title.textContent = "Aún no se puede instalar";
+    note.textContent = "Esto es lo que falta:";
+    steps.innerHTML = blockers
+      .map((item) => `<li class="is-warning">${escape(item)}</li>`)
+      .join("");
+    hint.textContent = "Si ya recargaste y sigue igual, abre el sitio desde Chrome.";
+    hint.hidden = false;
+    later.hidden = false;
+    sheet.hidden = false;
+    void sheet.offsetWidth;
+    sheet.classList.add("is-open");
+    document.body.classList.add("is-install-open");
+  };
+
   const closeSheet = () => {
     sheet.classList.remove("is-open");
     document.body.classList.remove("is-install-open");
@@ -160,7 +177,14 @@ function initInstallButton(mount) {
     }
     /* 2) Safari de escritorio y navegadores con API install(). */
     if (tryNativeMenu()) return;
-    /* 3) Último recurso: pasos concretos para el dispositivo. */
+    /* 3) Si el navegador no ofrece instalación nativa, dilo con el motivo
+       real antes de mostrar pasos que no aplican. */
+    const blockers = await diagnose();
+    if (blockers.length) {
+      showBlocker(blockers);
+      return;
+    }
+    /* 4) Navegador apto pero el evento aún no llega: pasos concretos. */
     openSheet();
   });
 

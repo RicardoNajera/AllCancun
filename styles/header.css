@@ -258,6 +258,13 @@
   font-weight: var(--font-weight-bold);
 }
 
+.install-sheet__steps li.is-warning::before {
+  content: "!";
+  background: rgba(255, 138, 128, 0.18);
+  color: #ff8a80;
+  font-size: 12px;
+}
+
 .install-sheet__hint {
   margin: 0 0 var(--space-4);
   padding: 10px 12px;
