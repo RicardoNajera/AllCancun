@@ -86,24 +86,25 @@
   margin-top: 2px;
 }
 
-/* Botón instalar: flotante a la derecha, no desplaza la marca */
+/* Botón instalar: dentro del marco del teléfono, arriba a la derecha */
 .install-button {
   position: fixed;
-  top: calc(var(--safe-top) + 16px);
-  right: max(var(--space-4), calc((100vw - var(--app-max-width)) / 2 + var(--space-4)));
+  top: calc(var(--safe-top) + 12px);
+  /* Se ancla al borde derecho del app-shell (480px), nunca al del monitor */
+  right: calc(50% - min(var(--app-max-width), 100vw) / 2 + var(--space-4) + var(--safe-right));
   z-index: 101;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex: 0 0 auto;
-  min-height: 36px;
-  padding: 0 var(--space-3);
+  height: 30px;
+  padding: 0 10px;
   border-radius: var(--radius-pill);
   background: var(--color-brand);
   color: #062a28;
-  font-size: var(--font-size-xs);
+  font-size: 11px;
   font-weight: var(--font-weight-bold);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   box-shadow: 0 6px 18px -8px rgba(47, 214, 196, 0.9);
   transition: transform var(--duration-fast) var(--ease-out),
@@ -113,13 +114,6 @@
 
 .install-button[hidden] {
   display: none;
-}
-
-/* Cuando no hay instalación nativa (iPhone, Mac), el botón invita a ver pasos */
-.install-button[data-mode="guide"] {
-  background: rgba(47, 214, 196, 0.16);
-  color: var(--color-brand);
-  box-shadow: inset 0 0 0 1px rgba(47, 214, 196, 0.45);
 }
 
 .install-button:active {

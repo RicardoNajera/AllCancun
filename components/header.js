@@ -112,16 +112,9 @@ function initInstallButton(mount) {
   const hint = mount.querySelector("#install-hint");
   const later = mount.querySelector("#install-later");
 
-  /* Sincroniza el texto del botón con la capacidad real del navegador */
+  /* Sincroniza la visibilidad del botón. El texto siempre dice "Instalar". */
   const sync = () => {
-    if (isInstalled()) {
-      button.hidden = true;
-      return;
-    }
-    button.hidden = false;
-    const label = button.querySelector("span");
-    if (label) label.textContent = canPrompt() ? "Instalar" : "Cómo instalar";
-    button.dataset.mode = canPrompt() ? "native" : "guide";
+    button.hidden = isInstalled();
   };
 
   const openSheet = () => {
