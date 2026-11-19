@@ -28,6 +28,7 @@ function loadStyle(href) {
 }
 
 export function mountFeature(mount, feature, context = {}) {
+  if (feature.styleBase) loadStyle(feature.styleBase);
   if (feature.styles) loadStyle(feature.styles);
 
   const accent = feature.accent || context.category?.accent || "viajes";

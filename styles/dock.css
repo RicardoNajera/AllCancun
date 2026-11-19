@@ -1,0 +1,339 @@
+/* ==========================================================================
+   All Cancún — Dock inferior
+   Glassmorphism oscuro. Solo CSS, cero imágenes.
+   5 botones: Inicio · Carrito · ASISTENTE · En curso · Perfil
+   ========================================================================== */
+
+:root {
+  --dock-bar-height: 66px;
+  /* Alto reservado al fondo del scroll: barra + margen + safe area */
+  --dock-height: calc(var(--dock-bar-height) + var(--space-3) + var(--safe-bottom));
+  --dock-glass: rgba(16, 20, 28, 0.58);
+  --dock-edge: rgba(255, 255, 255, 0.14);
+  --dock-ink: #eef2f7;
+  --dock-ink-dim: #93a1b5;
+  /* Disco del asistente: botón central dentro de la barra */
+  --ai-size: 46px;
+}
+
+/* ---- Contenedor ---- */
+
+.dock {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.dock > * {
+  pointer-events: auto;
+}
+
+/* ---- Barra de cristal ---- */
+
+.dock__bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-3) + var(--safe-bottom));
+  z-index: 120;
+  transform: translateX(-50%);
+  display: grid;
+  /* 5 botones: el asistente cae exacto al centro */
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  justify-items: center;
+  width: calc(100% - var(--space-4) * 2);
+  max-width: calc(var(--app-max-width) - var(--space-4) * 2);
+  height: var(--dock-bar-height);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--dock-edge);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.03) 38%,
+    rgba(255, 255, 255, 0.015) 100%
+  ),
+  var(--dock-glass);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  box-shadow:
+    0 18px 44px -18px rgba(0, 0, 0, 0.85),
+    0 2px 10px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  /* Aísla el blur: nada detrás provoca repaints del resto */
+  contain: layout paint style;
+}
+
+/* Reflejo superior del cristal */
+.dock__bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 52%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+/* ---- Pestañas ---- */
+
+.dock__tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 6px 0;
+  border-radius: var(--radius-md);
+  color: var(--dock-ink-dim);
+  transition: color var(--duration-base) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.dock__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+
+.dock__icon svg {
+  width: 23px;
+  height: 23px;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.dock__label {
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+.dock__tab[data-active="true"] {
+  color: var(--color-brand);
+}
+
+.dock__tab[data-active="true"] .dock__icon svg {
+  transform: translateY(-1px) scale(1.06);
+  filter: drop-shadow(0 0 10px rgba(47, 214, 196, 0.55));
+}
+
+/* Indicador luminoso de la pestaña activa */
+.dock__tab[data-active="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  width: 18px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  box-shadow: 0 0 12px rgba(47, 214, 196, 0.9);
+}
+
+.dock__tab:active .dock__icon svg {
+  transform: scale(0.9);
+}
+
+.dock__tab[data-open="true"] {
+  color: #ff8a5b;
+}
+
+.dock__tab[data-open="true"]::after {
+  background: #ff8a5b;
+  box-shadow: 0 0 12px rgba(255, 138, 91, 0.9);
+}
+
+/* ---- Badge de actividad ---- */
+
+.dock__badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: #ff5c7a;
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(11, 14, 19, 0.85), 0 0 12px rgba(255, 92, 122, 0.65);
+}
+
+.dock__badge[hidden] {
+  display: none;
+}
+
+
+/* ==========================================================================
+   Asistente — botón central de la barra
+   Mismo lenguaje que las pestañas, con jerarquía propia: disco iridiscente,
+   anillo cónico y halo contenido. Sin nada flotando ni sobresaliendo.
+   ========================================================================== */
+
+.dock__ai {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dock-ink);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Disco central: el foco visual de la barra */
+.dock__ai-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--ai-size);
+  height: var(--ai-size);
+  border-radius: 50%;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.55) 0%, transparent 52%),
+    linear-gradient(
+      150deg,
+      rgba(38, 222, 200, 0.98) 0%,
+      rgba(56, 140, 240, 0.98) 52%,
+      rgba(126, 92, 246, 0.98) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 6px rgba(10, 20, 40, 0.35),
+    0 4px 12px -4px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 16px -2px rgba(64, 200, 220, 0.55);
+  transition: transform var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+/* Anillo cónico girando lento dentro del borde */
+.dock__ai-ring {
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: 50%;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(95, 240, 216, 0.95) 0deg,
+    rgba(120, 190, 255, 0.9) 120deg,
+    rgba(170, 140, 255, 0.95) 240deg,
+    rgba(95, 240, 216, 0.95) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.85;
+  animation: ai-spin 14s linear infinite;
+  pointer-events: none;
+}
+
+/* Halo suave que respira: queda dentro del alto de la barra */
+.dock__ai-halo {
+  position: absolute;
+  inset: -7px;
+  z-index: -2;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(64, 210, 216, 0.4) 0%,
+    rgba(124, 110, 255, 0.24) 52%,
+    transparent 72%
+  );
+  filter: blur(6px);
+  animation: ai-glow 4.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dock__ai-core {
+  position: relative;
+  z-index: 1;
+  display: block;
+  line-height: 0;
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgba(0, 20, 40, 0.55));
+}
+
+.dock__ai-core svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+/* Etiqueta: mismo peso que los tabs, en el color del asistente */
+.dock__ai-label {
+  font-size: 0.625rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  line-height: 1;
+  color: #cfe9ff;
+}
+
+.dock__ai:active .dock__ai-disc {
+  transform: scale(0.94);
+}
+
+/* Con actividad: el halo late más rápido */
+.dock__ai[data-alert="true"] .dock__ai-halo {
+  animation-duration: 2.4s;
+}
+
+.dock__ai[data-alert="true"] .dock__ai-ring {
+  animation-duration: 6s;
+}
+
+@keyframes ai-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ai-glow {
+  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+  50% { opacity: 0.95; transform: scale(1.06); }
+}
+
+/* ---- Interacción en puntero fino ---- */
+
+@media (hover: hover) {
+  .dock__ai:hover .dock__ai-disc {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      inset 0 -2px 6px rgba(10, 20, 40, 0.35),
+      0 6px 16px -4px rgba(0, 0, 0, 0.75),
+      0 0 0 1px rgba(255, 255, 255, 0.3),
+      0 0 22px -2px rgba(64, 200, 220, 0.75);
+  }
+
+  .dock__tab:hover {
+    color: var(--dock-ink);
+  }
+}
+
+/* Sin movimiento: se conservan los brillos estáticos */
+@media (prefers-reduced-motion: reduce) {
+  .dock__ai-ring,
+  .dock__ai-halo {
+    animation: none;
+  }
+}

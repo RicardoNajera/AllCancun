@@ -22,7 +22,7 @@ const escape = (value = "") =>
     }
   });
 
-function categoryCard(category) {
+function categoryCard(category, position) {
   const caption = category.caption
     ? `<span class="category-card__caption">${escape(category.caption)}</span>`
     : "";
@@ -47,6 +47,7 @@ function categoryCard(category) {
       class="category-card"
       data-accent="${escape(category.accent)}"
       data-category-id="${escape(category.id)}"
+      data-index="${String(position).padStart(2, "0")}"
       aria-label="${escape([category.title, category.caption].filter(Boolean).join(": "))}"
     >
       <span class="category-card__media" aria-hidden="true">
@@ -85,7 +86,7 @@ export function renderCategoryGrid(mount) {
         <p class="categories__subtitle">Elige una categoría para empezar.</p>
       </div>
       <div class="category-grid" role="list">
-        ${categories.map(categoryCard).join("")}
+        ${categories.map((category, index) => categoryCard(category, index + 1)).join("")}
       </div>
     </section>
   `;
@@ -96,7 +97,6 @@ export function renderCategoryGrid(mount) {
   });
 
   initCardCarousels(mount);
-  fitCardTitles(mount);
 
   mount.querySelector(".category-grid")?.addEventListener("click", (event) => {
     const card = event.target.closest(".category-card");
@@ -109,40 +109,6 @@ export function renderCategoryGrid(mount) {
       new CustomEvent("category:select", { detail: category, bubbles: true })
     );
   });
-}
-
-/* Ajusta cada título al ancho real de su tarjeta.
-   Garantiza que ninguna palabra quede cortada ni fuera del centrado,
-   sea cual sea el ancho del dispositivo o la fuente del sistema. */
-function fitCardTitles(mount) {
-  const titles = Array.from(mount.querySelectorAll(".category-card__title"));
-  if (!titles.length) return;
-
-  const fit = () => {
-    titles.forEach((title) => {
-      // 1. Volver al tamaño base para medir sin arrastrar el ajuste previo
-      title.style.fontSize = "";
-      const max = title.clientWidth;
-      const needed = title.scrollWidth;
-      if (!max || !needed || needed <= max) return;
-
-      // 2. Encoger proporcionalmente hasta que quepa completo
-      const base = parseFloat(getComputedStyle(title).fontSize) || 16;
-      const next = Math.max(base * (max / needed) * 0.985, 11);
-      title.style.fontSize = `${next.toFixed(2)}px`;
-    });
-  };
-
-  fit();
-
-  if ("ResizeObserver" in window) {
-    const observer = new ResizeObserver(() => fit());
-    titles.forEach((title) => observer.observe(title));
-  } else {
-    window.addEventListener("resize", fit);
-  }
-
-  if (document.fonts?.ready) document.fonts.ready.then(fit);
 }
 
 /* Carrusel automático de fotos dentro de cada tarjeta */

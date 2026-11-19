@@ -1,0 +1,162 @@
+/* ==========================================================================
+   All Cancún — Estilos compartidos de las vistas de pestaña (dock)
+   Se carga una sola vez, al abrir la primera pestaña.
+   Prefijo `tv-` (tab view) para no chocar con `fv-` ni con el home.
+
+   IMPORTANTE: la base (`.feature-view`, `.fv-hero`, `.fv-badge`…) vive en
+   features/shared/feature-view.css y se declara aparte como `styleBase` en
+   cada vista de pestaña. No se usa `@import`: una hoja inyectada por JS no
+   siempre resuelve rutas relativas.
+   ========================================================================== */
+
+.tv-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-3);
+}
+
+.tv-lead {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+
+/* ---- Inicio: el home no lleva padding extra, ya lo trae su componente ---- */
+.tv-home {
+  padding: 0;
+}
+
+/* ---- Botón principal de la pestaña ---- */
+.tv-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--fv-accent);
+  color: #04121a;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  box-shadow: 0 10px 26px -12px var(--fv-accent);
+  transition: transform var(--duration-fast) var(--ease-out),
+    filter var(--duration-fast) var(--ease-out);
+}
+
+.tv-cta:active { transform: scale(0.97); }
+
+@media (hover: hover) {
+  .tv-cta:hover { filter: brightness(1.06); }
+}
+
+/* ---- Perfil: tarjeta de cuenta ---- */
+.tv-account {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.tv-account__avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--fv-soft);
+  color: var(--fv-accent);
+}
+
+.tv-account__avatar svg { width: 24px; height: 24px; }
+
+.tv-account__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tv-account__name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-ink);
+}
+
+.tv-account__hint {
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-ink-muted);
+}
+
+/* ---- Perfil: filas del menú ---- */
+.tv-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tv-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.tv-row__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--fv-soft);
+  color: var(--fv-accent);
+}
+
+.tv-row__icon svg { width: 18px; height: 18px; }
+
+.tv-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.tv-row__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-ink);
+}
+
+.tv-row__detail {
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-muted);
+}
+
+/* La flecha apunta a la derecha: se voltea el icono de "atrás" */
+.tv-row > svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: var(--color-ink-muted);
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) {
+  .tv-row:hover { background: rgba(255, 255, 255, 0.04); }
+}

@@ -12,10 +12,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  /* Sangra hasta los bordes de la ventana para que no se vea un marco
-     cuando el app-shell está centrado (max-width). */
-  width: 100vw;
-  max-width: none;
+  /* Sangra hasta los bordes del app-shell (no del monitor):
+     en escritorio el diseño debe verse como un teléfono. */
+  width: 100%;
+  max-width: var(--app-max-width);
   height: calc(var(--header-height) + var(--safe-top));
   padding: var(--safe-top) var(--space-4) 0;
   background: linear-gradient(

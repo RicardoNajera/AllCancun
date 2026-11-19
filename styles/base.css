@@ -22,6 +22,10 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   overscroll-behavior: none;
+  /* Diseño exclusivo de teléfono: nunca hay desplazamiento lateral */
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -84,6 +88,8 @@ ol {
   overflow: hidden;
   position: relative;
   isolation: isolate;
+  /* El contenido nunca se desborda del marco de teléfono */
+  overflow-x: hidden;
 }
 
 /* Fondo inmersivo: negro azulado con dos halos de color */
@@ -109,6 +115,32 @@ ol {
   overscroll-behavior-y: contain;
   /* El header fijo flota encima: reservamos su alto para que el contenido pase por debajo */
   padding-top: var(--header-height);
+  /* El dock inferior flota encima: el último contenido siempre es alcanzable */
+  padding-bottom: var(--dock-height, 0px);
+}
+
+/* El dock se va del todo: el asistente tiene su propio pie */
+body.is-immersive #app-header-slot,
+body.is-immersive #app-dock-slot {
+  display: none;
+}
+
+/* El asistente ocupa el alto completo: cero padding de header/dock */
+body.is-immersive .screen {
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+/* La entrada del asistente no se anima desde el shell: tiene la suya */
+body.is-immersive #app-screen > .feature-view {
+  margin-top: 0;
+  padding: 0;
+  gap: 0;
+  height: 100%;
+  animation: none;
 }
 
 /* Utilidades */

@@ -35,19 +35,58 @@
   color: var(--color-text-secondary);
 }
 
-/* Grid — carátulas grandes estilo streaming, una por fila para que
-   los nombres de categoría nunca se corten. */
+/* Grid — mosaico editorial: alturas parejas para que todas luzcan igual */
 .category-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: 68px;
   gap: var(--space-3);
-  grid-auto-rows: 1fr;
   width: 100%;
 }
 
-/* Primera tarjeta (hero) ocupa todo el ancho y es más alta */
-.category-grid > .category-card:first-child {
+/* Formato base: poster grande (3 col x 4 filas = 284px de alto) */
+.category-card {
+  grid-column: span 3;
+  grid-row: span 4;
+}
+
+/* 1) HERO apaisado full-width, con altura generosa */
+.category-grid > .category-card:nth-child(1) {
   grid-column: 1 / -1;
+  grid-row: span 4;
+  padding: var(--space-4);
+  border-radius: 24px;
+}
+
+/* 2) Protagonista vertical: solo una fila mas que el resto */
+.category-grid > .category-card:nth-child(2) {
+  grid-column: span 3;
+  grid-row: span 4;
+}
+
+/* 3) Panel a la derecha */
+.category-grid > .category-card:nth-child(3) {
+  grid-column: span 3;
+  grid-row: span 4;
+}
+
+/* 4) Ocupa todo el ancho: rellena la fila completa, sin huecos */
+.category-grid > .category-card:nth-child(4) {
+  grid-column: 1 / -1;
+  grid-row: span 4;
+}
+
+/* 5) Franja horizontal: alto de tarjeta normal, no una tira */
+.category-grid > .category-card:nth-child(5) {
+  grid-column: 1 / -1;
+  grid-row: span 3;
+  padding: var(--space-4);
+}
+
+/* Del 6 en adelante: verticales regulares */
+.category-grid > .category-card:nth-child(n + 6) {
+  grid-column: span 3;
+  grid-row: span 4;
 }
 
 /* Tarjeta */
@@ -56,50 +95,117 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: var(--space-4);
-  min-height: 248px;
+  gap: var(--space-2);
+  min-height: 0;
   padding: var(--space-3);
-  text-align: center;
-  border-radius: 22px;
+  text-align: left;
+  border-radius: 20px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 10px 26px -20px rgba(0, 0, 0, 0.95);
   overflow: hidden;
   isolation: isolate;
   transform: translateZ(0);
-  /* Contenedor de consulta: el título escala según ESTE ancho */
   container-type: inline-size;
-  transition: transform 320ms var(--ease-out),
-    box-shadow 320ms var(--ease-out),
-    border-color 320ms var(--ease-out),
-    filter 320ms var(--ease-out);
-  animation: card-in 520ms var(--ease-out) both;
+  transition: transform 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out),
+    border-color 300ms var(--ease-out),
+    filter 300ms var(--ease-out);
+  animation: card-in 480ms var(--ease-out) both;
 }
 
-/* Hero: primera carátula tipo "destacado de Netflix" */
-.category-grid > .category-card:first-child {
-  min-height: 320px;
-  padding: var(--space-5);
+/* Sangrado de la foto hasta el borde: lee como carátula, no como caja */
+.category-card__slide {
+  border-radius: inherit;
 }
 
-.category-grid > .category-card:first-child .category-card__title {
-  font-size: clamp(1.75rem, 8vw, 2.4rem);
+/* Capa de contraste para que el texto tenga piso sólido en todos los formatos */
+.category-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(6, 8, 12, 0.72) 0%,
+    rgba(6, 8, 12, 0.28) 38%,
+    rgba(6, 8, 12, 0) 62%
+  );
+  pointer-events: none;
+}
+
+/* Numero de posicion: detalle editorial */
+.category-card::before {
+  content: attr(data-index);
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+  font-size: 0.62rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* Tipografia por formato */
+.category-grid > .category-card:nth-child(1) .category-card__title {
+  font-size: clamp(1.6rem, 7cqi, 2.2rem);
   letter-spacing: -0.03em;
 }
 
-.category-grid > .category-card:first-child .category-card__caption {
+.category-grid > .category-card:nth-child(1) .category-card__caption,
+.category-grid > .category-card:nth-child(5) .category-card__caption {
   font-size: var(--font-size-sm);
 }
 
-.category-grid > .category-card:first-child .category-card__scrim {
+.category-grid > .category-card:nth-child(1) .category-card__scrim {
   background:
     linear-gradient(
       180deg,
-      rgba(8, 10, 14, 0.05) 0%,
-      rgba(8, 10, 14, 0.42) 45%,
-      rgba(8, 10, 14, 0.95) 100%
+      rgba(8, 10, 14, 0.02) 0%,
+      rgba(8, 10, 14, 0.18) 45%,
+      rgba(8, 10, 14, 0.92) 100%
     ),
     linear-gradient(120deg, var(--card-accent) 0%, transparent 55%);
+}
+
+/* 2) Protagonista vertical: titular grande apilado */
+.category-grid > .category-card:nth-child(2) .category-card__title {
+  font-size: clamp(1.05rem, 9cqi, 1.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 3 y 4) Paneles apaisados: titular mediano */
+.category-grid > .category-card:nth-child(3) .category-card__title,
+.category-grid > .category-card:nth-child(4) .category-card__title {
+  font-size: clamp(0.95rem, 5.4cqi, 1.3rem);
+}
+
+/* 5) Franja baja: contenido en una sola linea */
+.category-grid > .category-card:nth-child(5) .category-card__body {
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.category-grid > .category-card:nth-child(5) .category-card__title {
+  width: auto;
+  flex: 0 1 auto;
+  font-size: clamp(1rem, 5cqi, 1.3rem);
+}
+
+.category-grid > .category-card:nth-child(5) .category-card__caption {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* Acento por categoría */
@@ -190,19 +296,20 @@
   transform: scale(1);
 }
 
-/* Gradiente oscuro sobre la foto: legibilidad + acento de categoría */
+/* Gradiente sobre la foto: legibilidad en el tercio inferior + acento */
 .category-card__scrim {
   position: absolute;
   inset: 0;
   background:
     linear-gradient(
       180deg,
-      rgba(8, 10, 14, 0.1) 0%,
-      rgba(8, 10, 14, 0.55) 52%,
-      rgba(8, 10, 14, 0.94) 100%
+      rgba(8, 10, 14, 0.02) 0%,
+      rgba(8, 10, 14, 0.12) 40%,
+      rgba(8, 10, 14, 0.78) 78%,
+      rgba(8, 10, 14, 0.96) 100%
     ),
-    linear-gradient(135deg, var(--card-accent) 0%, transparent 62%);
-  opacity: 0.92;
+    linear-gradient(150deg, var(--card-accent) 0%, transparent 70%);
+  opacity: 0.9;
 }
 
 /* ---- Contenido ---- */
@@ -238,47 +345,44 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  /* Ocupa todo el ancho de la carátula y se ajusta al contenido,
-     evitando que el texto flote en una columna estrecha. */
+  gap: 1px;
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  align-items: center;
-  text-align: center;
-  /* Sin desbordes: si una palabra no cabe, escala en lugar de salirse */
+  align-items: flex-start;
+  text-align: left;
+  margin-top: auto;
   overflow: hidden;
 }
 
-/* Título: se escala al ancho disponible, así la palabra siempre cabe
-   completa y centrada, sea cual sea el nombre de la categoría. */
+/* Título: una línea, escala con el ancho de ESTA tarjeta (container query).
+   line-clamp evita cualquier desborde sin medir en JS. */
 .category-card__title {
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.1;
   color: #ffffff;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
-  transition: transform 320ms var(--ease-out);
-  /* Nunca romper palabras: solo saltos entre palabras */
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75);
+  transition: transform 300ms var(--ease-out);
   white-space: nowrap;
   word-break: normal;
   overflow-wrap: normal;
   hyphens: none;
-  /* Escala al contenedor: 8.5cqw equivale a ~1 palabra por ancho */
-  font-size: clamp(0.85rem, 8.5cqi, 1.45rem);
+  font-size: clamp(0.95rem, 10.5cqi, 1.35rem);
   display: block;
   width: 100%;
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
-  text-align: center;
+  text-align: left;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
-/* Sin soporte de container queries: tamaño fijo seguro para "Mantenimiento" */
+/* Sin container queries: tamaño fijo seguro */
 @supports not (font-size: 1cqi) {
   .category-card__title {
-    font-size: clamp(0.8rem, 3.6vw, 1rem);
-    white-space: normal;
+    font-size: 1rem;
   }
 }
 
@@ -288,14 +392,18 @@
   max-width: 100%;
 }
 
+/* Caption: secundaria, máximo 2 líneas */
 .category-card__caption {
-  font-size: clamp(0.8rem, 3.2vw, 0.9rem);
-  color: rgba(255, 255, 255, 0.78);
-  line-height: 1.3;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
-  white-space: normal;
-  overflow-wrap: break-word;
-  text-align: center;
+  font-size: clamp(0.68rem, 3.6cqi, 0.78rem);
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.25;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 /* Interacción estilo streaming: zoom marcado + brillo de acento */
@@ -350,41 +458,61 @@
   }
 }
 
-/* Móviles muy compactos */
+/* Moviles muy compactos: mosaico simple de 2 columnas, sin formatos estrechos */
 @media (max-width: 340px) {
-  .category-card {
-    min-height: 180px;
-    padding: var(--space-3);
-  }
-
-  .category-grid > .category-card:first-child {
-    min-height: 260px;
-  }
-
-  .category-card__title {
-    font-size: 1rem;
-  }
-}
-
-/* Escritorio / tablet ancha: 3 columnas y hero más cinematográfico */
-@media (min-width: 760px) {
   .category-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-4);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 88px;
+  }
+
+  .category-card,
+  .category-grid > .category-card:nth-child(n + 6),
+  .category-grid > .category-card:nth-child(2),
+  .category-grid > .category-card:nth-child(3),
+  .category-grid > .category-card:nth-child(4) {
+    grid-column: span 1;
+    grid-row: span 3;
+  }
+
+  .category-grid > .category-card:nth-child(1),
+  .category-grid > .category-card:nth-child(5) {
+    grid-column: 1 / -1;
+    grid-row: span 3;
   }
 
   .category-card {
-    min-height: 260px;
+    padding: var(--space-2);
   }
 
-  .category-grid > .category-card:first-child {
-    grid-column: span 2;
-    grid-row: span 2;
-    min-height: 560px;
+  .category-card::before {
+    font-size: 0.55rem;
   }
 
-  .category-grid > .category-card:first-child .category-card__title {
-    font-size: clamp(2.2rem, 4vw, 3rem);
+  /* Titulos y captions a una linea en tarjetas estrechas */
+  .category-grid > .category-card .category-card__title,
+  .category-grid > .category-card:nth-child(2) .category-card__title,
+  .category-grid > .category-card:nth-child(3) .category-card__title,
+  .category-grid > .category-card:nth-child(4) .category-card__title {
+    font-size: 0.88rem;
+    line-height: 1.1;
+    display: block;
+    white-space: nowrap;
+    -webkit-line-clamp: unset;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .category-grid > .category-card:nth-child(5) .category-card__body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .category-grid > .category-card:nth-child(5) .category-card__title {
+    width: 100%;
+  }
+
+  .category-card__caption {
+    font-size: 0.6rem;
   }
 }
 

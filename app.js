@@ -1,83 +1,96 @@
 /**
  * All Cancún — Entry point
- * Orquesta el montaje de componentes y el registro del Service Worker.
+ * Orquesta el montaje de componentes, la navegación y el Service Worker.
+ *
+ * Regla de oro: TODA navegación pasa por `nav` (features/router.js).
+ * Nadie más escribe la URL ni sincroniza el dock.
  */
 
 import { renderHeader } from "./components/header.js";
 import { renderCategoryGrid } from "./components/category-grid.js";
-import { openFeature, closeFeature } from "./features/router.js";
-import { hasFeature } from "./features/registry.js";
+import { renderDock, dock } from "./components/dock.js";
+import { createNavigator, resolve } from "./features/router.js";
 import { categories } from "./data/categories.js";
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 
-let currentScreen = null;
+let nav = null;
 
-/* Vuelve al home con el grid de categorías */
-function showHome(screen) {
-  closeFeature();
-  currentScreen = null;
+/* Home: el grid de categorías dentro del mismo `#app-screen` */
+function renderHome(screen) {
   renderCategoryGrid(screen);
   screen.scrollTop = 0;
 }
 
-/* Abre la vista exclusiva de la categoría seleccionada */
-async function showCategory(screen, category) {
-  const opened = await openFeature(screen, category.id, {
-    category,
-    back: () => goHome(screen),
-  });
-  if (!opened) return;
-  currentScreen = category.id;
+/* Pestaña del dock que corresponde a un destino */
+function tabFor(route) {
+  if (!route) return "inicio";
+  if (["inicio", "carrito", "en-curso", "perfil", "asistente"].includes(route)) return route;
+  return null; // una categoría no resalta ninguna pestaña
 }
 
-/* Regresa al home limpiando URL e historial */
-function goHome(screen) {
-  showHome(screen);
-  if (location.hash) {
-    try {
-      history.replaceState(null, "", location.pathname + location.search);
-    } catch {
-      /* Ignorado: solo es limpieza de la URL */
-    }
-  }
+/* Vistas que se abren a pantalla completa: sin header ni dock.
+   El asistente tiene su propia cabecera y su propio composer. */
+const IMMERSIVE = new Set(["asistente"]);
+
+function setImmersive(on) {
+  document.body.classList.toggle("is-immersive", on);
 }
 
 function mountApp() {
   const headerMount = $("#app-header-slot");
   const screen = $("#app-screen");
+  const dockMount = $("#app-dock-slot");
 
   if (!headerMount || !screen) return;
 
   renderHeader(headerMount);
-  showHome(screen);
+  if (dockMount) renderDock(dockMount);
 
-  // El grid emite la selección de una categoría
-  screen.addEventListener("category:select", (event) => {
-    const category = event.detail;
-    if (!category || !hasFeature(category.id)) return;
-
-    showCategory(screen, category);
-    try {
-      history.pushState({ category: category.id }, "", `#${category.id}`);
-    } catch {
-      /* Sin historial la app sigue funcionando */
-    }
+  nav = createNavigator(screen, {
+    onHome: () => renderHome(screen),
+    onChange: (route) => {
+      const tabId = tabFor(route);
+      // En una categoría el dock no marca pestaña activa: evita la
+      // sensación de "estar en un lugar que no se entiende".
+      dock.setActive(tabId);
+      // El asistente ocupa toda la pantalla: adiós header y barra inferior.
+      setImmersive(IMMERSIVE.has(route));
+    },
   });
 
-  // Botón "atrás" del navegador / gesto del sistema sin recargar
+  // Punto único de entrada desde el home
+  screen.addEventListener("category:select", (event) => {
+    const id = event.detail?.id;
+    if (id && resolve(id)) nav.go(id);
+  });
+
+  // Único punto de entrada desde el dock
+  document.addEventListener("dock:navigate", (event) => {
+    const route = event.detail?.route;
+    if (route) nav.go(route);
+  });
+
+  // El botón del asistente del dock abre la vista inmersiva
+  document.addEventListener("dock:ai", () => nav.go("asistente"));
+
+  // Botón "atrás" del navegador / gesto del sistema
   window.addEventListener("popstate", () => {
-    if (currentScreen) goHome(screen);
+    const route = location.hash.replace("#", "");
+    nav.go(route || "inicio", { history: false });
   });
 
   window.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && currentScreen) goHome(screen);
+    // En el asistente, Escape lo maneja su propia vista: primero corta el
+    // dictado y solo después cierra. Aquí se ignora para no robarle el gesto.
+    if (event.key === "Escape" && !document.body.classList.contains("is-immersive")) {
+      nav.go("inicio");
+    }
   });
 
-  // Si se abre la app con un hash de categoría, entra directo
-  const hashId = location.hash.replace("#", "");
-  const hashCategory = categories.find((item) => item.id === hashId);
-  if (hashCategory && hasFeature(hashId)) showCategory(screen, hashCategory);
+  // Arranque: si la URL trae una ruta válida, se abre directo
+  const initial = location.hash.replace("#", "");
+  nav.go(resolve(initial) ? initial : "inicio", { history: false, replace: true });
 }
 
 /* Service Worker (PWA) */

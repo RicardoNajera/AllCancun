@@ -459,6 +459,7 @@
 .fv-progress__meta strong {
   color: var(--fv-accent);
   font-weight: var(--font-weight-bold);
+}
 
 /* ---- Pasos ---- */
 .fv-steps {
@@ -676,4 +677,3 @@
   }
 }
 
-}

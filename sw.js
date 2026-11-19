@@ -1,5 +1,5 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v51";
+const CACHE_VERSION = "v71";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -11,7 +11,10 @@ const APP_SHELL = [
   "./styles/base.css",
   "./styles/header.css",
   "./styles/categories.css",
+  "./styles/dock.css",
   "./components/icons.js",
+  "./components/dock.js",
+  "./components/dock-icons.js",
   "./components/header.js",
   "./components/category-grid.js",
   "./data/categories.js",
@@ -22,6 +25,14 @@ const APP_SHELL = [
   "./features/shared/content.js",
   "./features/shared/building.js",
   "./features/shared/feature-view.css",
+  "./features/tabs.js",
+  "./features/asistente/index.js",
+  "./features/asistente/brain.js",
+  "./features/asistente/catalog.js",
+  "./features/asistente/reply.js",
+  "./features/asistente/persona.js",
+  "./features/asistente/icons.js",
+  "./features/asistente/view.css",
   "./features/mototaxis/index.js",
   "./features/mototaxis/content.js",
   "./features/mototaxis/map.js",
