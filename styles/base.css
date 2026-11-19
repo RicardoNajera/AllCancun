@@ -46,6 +46,19 @@ svg {
   max-width: 100%;
 }
 
+/* Los SVG inline llegan sin dimensiones y, mientras carga el CSS de cada
+   vista, se pintan al tamaño por defecto del navegador (300x150): eso es el
+   parpadeo de "iconos grandes y feos" al cambiar de vista. Un tamaño base
+   evita el salto; cada componente afina el suyo después. */
+svg:not([width]):not([height]) {
+  width: 1em;
+  height: 1em;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
 button {
   font: inherit;
   color: inherit;

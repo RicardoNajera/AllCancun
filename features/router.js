@@ -48,7 +48,7 @@ export async function openView(mount, target, context = {}) {
 
   currentId = view.id;
   currentKind = view.kind;
-  disposeCurrent = mountFeature(mount, def, {
+  disposeCurrent = await mountFeature(mount, def, {
     route: view.id,
     kind: view.kind,
     category: context.category || view.meta,

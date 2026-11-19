@@ -1,5 +1,5 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v77";
+const CACHE_VERSION = "v78";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -25,6 +25,7 @@ const APP_SHELL = [
   "./features/shared/content.js",
   "./features/shared/building.js",
   "./features/shared/feature-view.css",
+  "./features/tabs/shared/tab-view.css",
   "./features/shared/install.js",
   "./features/tabs.js",
   "./features/asistente/index.js",
