@@ -18,6 +18,7 @@ import {
   hide,
   stepsFor,
   tryNativeMenu,
+  waitForPrompt,
 } from "../features/shared/install.js";
 
 const escape = (value = "") =>
@@ -149,13 +150,17 @@ function initInstallButton(mount) {
   if (isHidden()) button.classList.add("is-optional-hidden");
 
   button.addEventListener("click", async () => {
+    /* 1) Chrome / Edge / Samsung Internet / Opera: prompt nativo.
+       Chrome a veces entrega el evento unos ms tarde, así que esperamos. */
+    await waitForPrompt(800);
     if (canPrompt()) {
       const result = await promptInstall();
       sync();
       if (result === "ok" || result === "dismissed") return;
     }
-    /* Safari y otros navegadores sin prompt nativo: intenta el menú */
+    /* 2) Safari de escritorio y navegadores con API install(). */
     if (tryNativeMenu()) return;
+    /* 3) Último recurso: pasos concretos para el dispositivo. */
     openSheet();
   });
 

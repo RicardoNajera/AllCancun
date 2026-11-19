@@ -7,7 +7,8 @@
 
 const HIDE_KEY = "allcancun.install.hidden";
 let deferredPrompt = null;
-let listenersReady = false;
+const subscribers = new Set();
+let listening = false;
 
 /* ---- Detección de plataforma ---- */
 
@@ -30,29 +31,63 @@ export const isInstalled = () =>
 
 export const canPrompt = () => Boolean(deferredPrompt);
 
-/** Escucha el evento del navegador. Devuelve una función para desuscribirse. */
-export function watchInstall(onChange) {
-  if (listenersReady) return () => {};
-  listenersReady = true;
+/**
+ * Instala el listener UNA sola vez por carga de página y notifica a todos los
+ * suscriptores. Antes se perdía el evento si el header se volvía a pintar,
+ * y por eso caíamos en las instrucciones manuales en Android.
+ */
+function ensureListener() {
+  if (listening) return;
+  listening = true;
 
-  const onPrompt = (event) => {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    /* Sin preventDefault el navegador muestra su propio banner y no podemos
+       dispararlo desde nuestro botón. */
     event.preventDefault();
     deferredPrompt = event;
-    onChange?.();
-  };
-  const onInstalled = () => {
+    subscribers.forEach((fn) => fn());
+  });
+
+  window.addEventListener("appinstalled", () => {
     deferredPrompt = null;
-    onChange?.();
-  };
+    subscribers.forEach((fn) => fn());
+  });
 
-  window.addEventListener("beforeinstallprompt", onPrompt);
-  window.addEventListener("appinstalled", onInstalled);
+  window
+    .matchMedia("(display-mode: standalone)")
+    .addEventListener?.("change", () => subscribers.forEach((fn) => fn()));
+}
 
-  return () => {
-    window.removeEventListener("beforeinstallprompt", onPrompt);
-    window.removeEventListener("appinstalled", onInstalled);
-    listenersReady = false;
-  };
+/** Escucha cambios de disponibilidad. Devuelve la función para desuscribirse. */
+export function watchInstall(onChange) {
+  ensureListener();
+  if (onChange) subscribers.add(onChange);
+  return () => subscribers.delete(onChange);
+}
+
+/**
+ * Se llama lo antes posible en el arranque: el evento beforeinstallprompt
+ * llega antes de que React/el header exista, y si no hay listener en ese
+ * momento el navegador nunca vuelve a emitirlo.
+ */
+export function primeInstall() {
+  ensureListener();
+}
+
+/* Espera a que el navegador entregue el evento (Chrome lo emite tarde). */
+export function waitForPrompt(timeout = 800) {
+  if (deferredPrompt) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      subscribers.delete(done);
+      resolve(Boolean(deferredPrompt));
+    }, timeout);
+    const done = () => {
+      clearTimeout(timer);
+      resolve(Boolean(deferredPrompt));
+    };
+    subscribers.add(done);
+  });
 }
 
 /** Lanza la instalación nativa. Devuelve "ok" | "dismissed" | "unavailable". */

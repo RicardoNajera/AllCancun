@@ -11,6 +11,11 @@ import { renderCategoryGrid } from "./components/category-grid.js";
 import { renderDock, dock } from "./components/dock.js";
 import { createNavigator, resolve } from "./features/router.js";
 import { categories } from "./data/categories.js";
+import { primeInstall } from "./features/shared/install.js";
+
+/* El navegador emite beforeinstallprompt una sola vez y muy temprano:
+   hay que escuchar antes de que se monte el header o se pierde. */
+primeInstall();
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 
