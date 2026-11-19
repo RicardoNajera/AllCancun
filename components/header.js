@@ -44,16 +44,16 @@ export function renderHeader(mount) {
           <span class="brand__tagline">${escape("Todo lo local, en un solo lugar")}</span>
         </div>
       </div>
-      <button
-        type="button"
-        class="install-button"
-        id="install-button"
-        aria-label="Instalar All Cancún en este dispositivo"
-      >
-        ${icons.install}
-        <span>Instalar</span>
-      </button>
     </header>
+    <button
+      type="button"
+      class="install-button"
+      id="install-button"
+      aria-label="Instalar All Cancún en este dispositivo"
+    >
+      ${icons.install}
+      <span>Instalar</span>
+    </button>
     <div class="install-sheet" id="install-sheet" hidden>
       <div class="install-sheet__backdrop" data-install-close></div>
       <div class="install-sheet__panel" role="dialog" aria-modal="true"
