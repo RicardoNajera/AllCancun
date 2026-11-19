@@ -88,11 +88,11 @@
 
 /* Botón instalar: flotante a la derecha, no desplaza la marca */
 .install-button {
-  display: none;
   position: fixed;
   top: calc(var(--safe-top) + 16px);
   right: max(var(--space-4), calc((100vw - var(--app-max-width)) / 2 + var(--space-4)));
   z-index: 101;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
@@ -103,18 +103,173 @@
   color: #062a28;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
   box-shadow: 0 6px 18px -8px rgba(47, 214, 196, 0.9);
   transition: transform var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
 }
 
-.install-button[data-available="true"] {
-  display: inline-flex;
+.install-button[hidden] {
+  display: none;
+}
+
+/* Cuando no hay instalación nativa (iPhone, Mac), el botón invita a ver pasos */
+.install-button[data-mode="guide"] {
+  background: rgba(47, 214, 196, 0.16);
+  color: var(--color-brand);
+  box-shadow: inset 0 0 0 1px rgba(47, 214, 196, 0.45);
+}
+
+.install-button:active {
+  transform: scale(0.96);
+}
+
+.install-button.is-optional-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .install-button svg {
   width: 16px;
   height: 16px;
+}
+
+/* ---- Hoja de instrucciones de instalación ---- */
+
+.install-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.install-sheet[hidden] {
+  display: none;
+}
+
+.install-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.68);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 220ms var(--ease-out);
+}
+
+.install-sheet.is-open .install-sheet__backdrop {
+  opacity: 1;
+}
+
+.install-sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-5) var(--space-5) calc(var(--space-5) + var(--safe-bottom));
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: #131922;
+  color: var(--color-text);
+  box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.95);
+  transform: translateY(100%);
+  transition: transform 260ms var(--ease-out);
+}
+
+.install-sheet.is-open .install-sheet__panel {
+  transform: translateY(0);
+}
+
+.install-sheet__grab {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto var(--space-4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.install-sheet__title {
+  margin: 0 0 6px;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+.install-sheet__note {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.install-sheet__steps {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.install-sheet__steps li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 36px;
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.install-sheet__steps li::before {
+  content: counter(paso);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(47, 214, 196, 0.16);
+  color: var(--color-brand);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.install-sheet__hint {
+  margin: 0 0 var(--space-4);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.install-sheet__cta {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: #062a28;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+}
+
+.install-sheet__cta:active {
+  transform: scale(0.98);
+}
+
+.install-sheet__later {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+body.is-install-open {
+  overflow: hidden;
 }
 
 /* Hero de bienvenida (dato local + color) */
