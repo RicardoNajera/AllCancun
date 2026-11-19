@@ -1,7 +1,7 @@
 {
   "name": "All Cancún",
   "short_name": "All Cancún",
-  "description": "All Cancún",
+  "description": "Encuentra viajes, tianguis, comercios, mantenimiento, salud y mas. Servicios y negocios locales de Cancun.",
   "lang": "es-MX",
   "id": "/",
   "start_url": "./index.html",
@@ -24,10 +24,47 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "dir": "ltr",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "categories": [
+    "shopping",
+    "food",
+    "travel",
+    "lifestyle"
+  ],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Cheel, el asistente",
+      "short_name": "Asistente",
+      "url": "./index.html?go=asistente",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Comercios",
+      "short_name": "Comercios",
+      "url": "./index.html?go=comercios",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

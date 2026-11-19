@@ -64,6 +64,28 @@ export async function promptInstall() {
   return outcome === "accepted" ? "ok" : "dismissed";
 }
 
+/**
+ * Safari en Mac no expone beforeinstallprompt, pero sí un menú nativo.
+ * Esta función intenta abrirlo; si el navegador no lo soporta, devuelve false.
+ */
+export function tryNativeMenu() {
+  if (typeof navigator.install !== "function") return false;
+  try {
+    navigator.install({
+      preferRelatedApplications: false,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Safari de escritorio: Archivo → Agregar al Dock (macOS Sonoma+). */
+export const canAddToDock = () => {
+  const p = platform();
+  return p.mac && p.isSafari;
+};
+
 /* ---- Instrucciones por dispositivo ---- */
 
 const STEPS = {

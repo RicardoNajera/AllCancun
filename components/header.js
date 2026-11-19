@@ -17,6 +17,7 @@ import {
   isHidden,
   hide,
   stepsFor,
+  tryNativeMenu,
 } from "../features/shared/install.js";
 
 const escape = (value = "") =>
@@ -151,9 +152,10 @@ function initInstallButton(mount) {
     if (canPrompt()) {
       const result = await promptInstall();
       sync();
-      if (result === "ok") return;
-      if (result === "dismissed") return;
+      if (result === "ok" || result === "dismissed") return;
     }
+    /* Safari y otros navegadores sin prompt nativo: intenta el menú */
+    if (tryNativeMenu()) return;
     openSheet();
   });
 
