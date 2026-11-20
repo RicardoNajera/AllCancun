@@ -7,10 +7,11 @@ export const content = {
   eyebrow: "Tu cuenta",
   title: "Perfil",
   lead: "Tus datos, tus compras y la configuración de la app en un solo lugar.",
-  status: "Cuenta local",
-  guestName: "Invitado",
-  guestHint: "Entra con tu teléfono para guardar tus compras y favoritos.",
-  ctaLabel: "Crear mi cuenta",
+  status: "Tu cuenta",
+  loginTitle: "Entra a All Cancún",
+  loginLead:
+    "Guarda tus compras, favoritos y direcciones. Con tu apodo sigues siendo anónimo para los demás.",
+  loginLegal: "Al continuar aceptas los términos y el aviso de privacidad.",
   sectionTitle: "Tu cuenta",
   rows: [
     { id: "compras", label: "Mis compras", detail: "Historial y pedidos", icon: "comercios" },
