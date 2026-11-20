@@ -95,19 +95,19 @@ export default {
                 <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
               </svg>
             </span>
-            <p class="pf-auth__title">${escape(content.loginTitle)}</p>
-            <p class="pf-auth__lead">${escape(content.loginLead)}</p>
-
             <div class="pf-providers">
               ${PROVIDERS.map(
                 (p) => `
                 <button type="button" class="pf-provider pf-provider--${p.id}"
-                        data-pf-provider="${p.id}">
+                        data-pf-provider="${p.id}" aria-label="Continuar con ${escape(p.label)}">
                   <span class="pf-provider__icon" aria-hidden="true">${providerLogo(p.id)}</span>
                   <span class="pf-provider__label">Continuar con ${escape(p.label)}</span>
                 </button>`
               ).join("")}
             </div>
+
+            <p class="pf-auth__title">${escape(content.loginTitle)}</p>
+            <p class="pf-auth__lead">${escape(content.loginLead)}</p>
 
             <p class="pf-auth__error" data-pf-error role="alert" hidden></p>
             <p class="pf-auth__legal">${escape(content.loginLegal)}</p>
@@ -143,7 +143,7 @@ export default {
             <label class="pf-field">
               <span class="pf-field__label">Foto de perfil (URL)</span>
               <input class="pf-field__input" type="url" name="foto_perfil_url" inputmode="url"
-                     placeholder="https://..." />
+                     placeholder="Sin imagen todavía" />
               <span class="pf-field__hint">Opcional. Si lo dejas vacío usamos tu inicial.</span>
             </label>
 
@@ -154,6 +154,38 @@ export default {
               <button type="button" class="pf-signout" data-pf-signout>Cerrar sesión</button>
             </div>
           </form>
+
+          <!-- Todos los campos de public.perfiles. "Vacío" si la base no trae dato -->
+          <dl class="pf-data">
+            <div class="pf-data__row">
+              <dt>Apodo</dt>
+              <dd data-pf-row="apodo">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>Nombre completo</dt>
+              <dd data-pf-row="nombre_completo">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>Foto de perfil</dt>
+              <dd data-pf-row="foto_perfil_url">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>Rol</dt>
+              <dd data-pf-row="rol">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>ID</dt>
+              <dd data-pf-row="id">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>Creado</dt>
+              <dd data-pf-row="creado_en">Vacío</dd>
+            </div>
+            <div class="pf-data__row">
+              <dt>Actualizado</dt>
+              <dd data-pf-row="actualizado_en">Vacío</dd>
+            </div>
+          </dl>
         </div>
 
         <!-- Cargando sesión -->
@@ -249,6 +281,33 @@ function mountLogin(root) {
       form.elements.nombre_completo.value = profile?.nombre_completo || "";
       form.elements.foto_perfil_url.value = profile?.foto_perfil_url || "";
     }
+
+    /* Todos los campos de la tabla; "Vacío" si la base no trae el dato */
+    const fecha = (iso) => {
+      if (!iso) return "Vacío";
+      const d = new Date(iso);
+      return Number.isNaN(d.getTime()) ? "Vacío" : d.toLocaleString("es-MX");
+    };
+    const rows = {
+      apodo: profile?.apodo,
+      nombre_completo: profile?.nombre_completo,
+      foto_perfil_url: profile?.foto_perfil_url,
+      rol: profile?.rol,
+      id: session?.user?.id || profile?.id,
+      creado_en: profile?.creado_en,
+      actualizado_en: profile?.actualizado_en,
+    };
+
+    Object.entries(rows).forEach(([key, raw]) => {
+      const cell = root.querySelector(`[data-pf-row="${key}"]`);
+      if (!cell) return;
+      const value =
+        key === "creado_en" || key === "actualizado_en"
+          ? fecha(raw)
+          : String(raw || "").trim() || "Vacío";
+      cell.textContent = value;
+      cell.classList.toggle("is-empty", value === "Vacío");
+    });
   }
 
   /* Carga (o crea) el perfil del usuario y muestra la cuenta */
