@@ -36,10 +36,10 @@ const googleLogo = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden=
 
 /* Iconos — trazo 1.7, heredan color del contexto */
 const ico = {
-  user: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+  user: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.4c0-3.6 3.2-5.8 7.2-5.8s7.2 2.2 7.2 5.8"/></svg>`,
-  signature: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+  signature: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M3.5 17.2c2.4 0 3.1-4.6 4.6-8.6.9-2.4 2-3.2 2.9-2.2 1 1.1-.8 5.2-.2 6.6.6 1.4 2 .5 2.9-.5"/>
     <path d="M14 12.6c1.6-1.6 3.4-2.1 4 .1.5 1.9-2.1 4.3-.4 4.6 1.2.2 2.4-.9 3-1.7"/></svg>`,
@@ -114,7 +114,7 @@ export default {
         <!-- Invitado -->
         <div class="pf-guest" data-pf="guest" ${configured ? "" : "hidden"}>
           <span class="pf-guest__mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor"
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/>
             </svg>
@@ -244,6 +244,11 @@ const FIELD_META = {
 
 function mountLogin(root) {
   if (!root) return;
+
+  /* El perfil tiene poca información: no debe deslizarse.
+     Marcamos el scroller de la app para que el CSS lo sepa. */
+  const scroller = document.getElementById("app-screen");
+  if (scroller) scroller.classList.add("is-no-scroll");
 
   const $ = (sel) => root.querySelector(sel);
 
@@ -552,6 +557,9 @@ function mountLogin(root) {
     clearTimeout(disarmTimer);
     unsubscribe();
     if (session?.user?.id) session = null;
+    /* Otras vistas vuelven a poder deslizarse */
+    const scr = document.getElementById("app-screen");
+    if (scr) scr.classList.remove("is-no-scroll");
   };
 }
 
