@@ -1,10 +1,12 @@
 /* ==========================================================================
    All Cancún — Perfil
-   Interfaz inmersiva y premium, optimizada para gama baja:
-   · Cero backdrop-filter / filter (caros en GPU débil)
-   · Animaciones solo sobre transform y opacity (compuestas)
-   · Sin @keyframes infinitos; transiciones cortas
-   · Un gradiente por bloque, sin sombras apiladas
+   Panel de identidad estilo Uber/Didi, minimalista.
+
+   Rendimiento (gama baja primero):
+   · Cero backdrop-filter / filter — caros en GPU débil
+   · Transiciones solo en transform y opacity (compuestas, sin repaint)
+   · Sin @keyframes en bucle; nada de sombras apiladas
+   · Una sola capa de degradado por bloque
    ========================================================================== */
 
 .pf-root {
@@ -13,155 +15,114 @@
 
 /* ---------- Avatar ---------- */
 .pf-avatar {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   overflow: hidden;
   color: var(--color-text-inverse);
-  background: linear-gradient(145deg, var(--color-brand), var(--color-brand-strong));
+  background: linear-gradient(150deg, var(--color-brand) 0%, var(--color-brand-strong) 100%);
   border-radius: var(--radius-pill);
+  font-size: 1.35rem;
   font-weight: var(--font-weight-bold);
-  font-size: 1.1rem;
-}
-
-.pf-avatar--xl {
-  width: 96px;
-  height: 96px;
-  font-size: 2rem;
-  box-shadow: 0 0 0 5px rgba(47, 214, 196, 0.1),
-    0 18px 40px -22px rgba(47, 214, 196, 0.55);
-}
-
-.pf-avatar--xl svg {
-  width: 40px;
-  height: 40px;
+  letter-spacing: -0.02em;
 }
 
 .pf-avatar__img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .pf-avatar__initial {
   line-height: 1;
 }
 
-/* ---------- Invitado: acceso ---------- */
-.pf-auth {
-  display: flex;
-  justify-content: center;
-  padding-top: var(--space-2);
-}
-
-.pf-auth__card {
-  position: relative;
+/* ---------- Invitado ---------- */
+.pf-guest {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-6) var(--space-5) var(--space-5);
+  padding: var(--space-8) var(--space-2) var(--space-4);
   text-align: center;
-  border-radius: var(--radius-xl);
-  border: 1px solid rgba(47, 214, 196, 0.16);
-  background: linear-gradient(180deg,
-      rgba(30, 62, 66, 0.55) 0%,
-      rgba(20, 25, 34, 0.9) 62%);
-  overflow: hidden;
 }
 
-/* Halo estático: gradiente radial pintado una vez, sin animación */
-.pf-auth__halo {
-  position: absolute;
-  top: -70px;
-  left: 50%;
-  width: 260px;
-  height: 200px;
-  translate: -50% 0;
-  pointer-events: none;
-  background: radial-gradient(circle,
-      rgba(47, 214, 196, 0.22) 0%,
-      rgba(47, 214, 196, 0) 70%);
+.pf-guest__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  color: var(--color-brand);
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-pill);
 }
 
-.pf-auth__title {
-  position: relative;
-  margin: var(--space-2) 0 0;
-  font-size: 1.5rem;
+.pf-guest__title {
+  margin: var(--space-3) 0 0;
+  font-size: 1.4rem;
   font-weight: var(--font-weight-bold);
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  color: var(--color-text);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
-.pf-auth__lead {
-  position: relative;
+.pf-guest__lead {
   margin: 0;
-  max-width: 30ch;
+  max-width: 26ch;
   font-size: var(--font-size-sm);
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
-.pf-auth__legal {
-  position: relative;
-  margin: var(--space-1) 0 0;
+.pf-guest__legal {
+  margin: var(--space-2) 0 0;
+  max-width: 32ch;
   font-size: 0.6875rem;
   line-height: 1.45;
   color: var(--color-text-secondary);
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
-.pf-auth__error {
-  position: relative;
+.pf-guest__error {
   width: 100%;
-  margin: 0;
-  padding: 10px 12px;
+  margin: var(--space-2) 0 0;
+  padding: 10px var(--space-3);
   font-size: var(--font-size-xs);
   line-height: 1.4;
   text-align: left;
   color: #ffb4b4;
-  background: rgba(255, 90, 90, 0.12);
-  border: 1px solid rgba(255, 90, 90, 0.28);
+  background: rgba(255, 90, 90, 0.1);
   border-radius: var(--radius-sm);
 }
 
-
-
-/* ---------- Botón de proveedor ---------- */
 .pf-providers {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
   width: 100%;
-  margin-top: var(--space-2);
+  max-width: 340px;
+  margin-top: var(--space-3);
 }
 
+/* ---------- Botón Google ---------- */
 .pf-provider {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  min-height: 52px;
+  min-height: 54px;
   padding: 0 var(--space-4);
   font-family: inherit;
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-semibold);
-  color: #fff;
-  background: linear-gradient(180deg, #2ed3c1 0%, #17b3a4 100%);
-  border: 0;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  box-shadow: 0 10px 24px -12px rgba(47, 214, 196, 0.8);
   transition: transform var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
+    border-color var(--duration-fast) var(--ease-out);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -170,221 +131,189 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
   flex: 0 0 auto;
-  padding: 3px;
+  width: 26px;
+  height: 26px;
+  padding: 4px;
   background: #fff;
   border-radius: var(--radius-pill);
 }
 
-.pf-provider__icon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.pf-provider__label {
-  line-height: 1;
-  padding-top: 1px;
-}
-
 .pf-provider:active {
-  transform: scale(0.975);
-  box-shadow: 0 6px 16px -12px rgba(47, 214, 196, 0.8);
+  transform: scale(0.978);
+}
+
+@media (hover: hover) {
+  .pf-provider:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+  }
 }
 
 .pf-provider:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 .pf-provider.is-busy {
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 .pf-provider:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 214, 196, 0.35),
-    0 10px 24px -12px rgba(47, 214, 196, 0.8);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
 }
 
-/* ---------- Héroe del usuario ---------- */
-.pf-hero {
-  position: relative;
+
+/* ---------- Cabecera de identidad ---------- */
+.pf-id {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: var(--space-5) var(--space-4) var(--space-6);
-  overflow: hidden;
-  text-align: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-1) var(--space-5);
 }
 
-.pf-hero__glow {
-  position: absolute;
-  top: -90px;
-  left: 50%;
-  width: 300px;
-  height: 220px;
-  translate: -50% 0;
-  pointer-events: none;
-  background: radial-gradient(circle,
-      rgba(47, 214, 196, 0.18) 0%,
-      rgba(47, 214, 196, 0) 68%);
+.pf-id__text {
+  min-width: 0;
 }
 
-.pf-hero__apodo {
-  position: relative;
-  margin: var(--space-4) 0 0;
-  font-size: 1.5rem;
+.pf-id__apodo {
+  margin: 0;
+  font-size: 1.3rem;
   font-weight: var(--font-weight-bold);
   letter-spacing: -0.02em;
-
-/* ---------- Tarjeta del formulario ---------- */
-.pf-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
-.pf-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+.pf-id__mail {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
-.pf-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.pf-field__label {
+/* ---------- Etiqueta de sección ---------- */
+.pf-section {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-1);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
-.pf-field__box {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-height: 52px;
-  padding: 0 var(--space-3) 0 var(--space-4);
-  background: var(--color-surface-muted);
+/* ---------- Lista de filas ---------- */
+.pf-list {
+  overflow: hidden;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  transition: border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.pf-field__box:focus-within {
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px var(--color-brand-soft);
-}
-
-.pf-field__at {
-  flex: 0 0 auto;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-brand);
-}
-
-.pf-field__input {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 50px;
-  padding: 0;
+.pf-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
   font-family: inherit;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
+  text-align: left;
   color: var(--color-text);
   background: transparent;
   border: 0;
-  outline: none;
+  transition: background-color var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
-.pf-field__input--plain {
-  min-height: 52px;
-  padding: 0 var(--space-4);
+.pf-row + .pf-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.pf-row__ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  color: var(--color-brand);
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-sm);
+}
+
+.pf-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pf-row__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+  color: var(--color-text-secondary);
+}
+
+.pf-row__value {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-row__value.is-empty {
   font-weight: var(--font-weight-regular);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  transition: border-color var(--duration-fast) var(--ease-out),
-    box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.pf-field__input--plain:focus {
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px var(--color-brand-soft);
-}
-
-.pf-field__input::placeholder {
   color: var(--color-text-secondary);
-  opacity: 0.55;
+  opacity: 0.7;
 }
 
-.pf-field__hint {
-  font-size: 0.6875rem;
-  line-height: 1.4;
+.pf-row__chev {
+  flex: 0 0 auto;
+  display: inline-flex;
   color: var(--color-text-secondary);
-  opacity: 0.75;
+  opacity: 0.5;
 }
 
-/* ---------- Estado del formulario ---------- */
-.pf-form__status {
-  margin: 0;
+.pf-row:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@media (hover: hover) {
+  .pf-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.pf-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-brand);
+}
+
+/* ---------- Estado ---------- */
+.pf-account__status {
+  margin: var(--space-3) 0 0;
   padding: 10px var(--space-3);
   font-size: var(--font-size-xs);
   line-height: 1.4;
   border-radius: var(--radius-sm);
 }
 
-.pf-form__status[data-tone="ok"] {
+.pf-account__status[data-tone="ok"] {
   color: var(--color-brand);
   background: var(--color-brand-soft);
 }
 
-.pf-form__status[data-tone="error"] {
+.pf-account__status[data-tone="error"] {
   color: #ffb4b4;
-  background: rgba(255, 90, 90, 0.12);
-}
-
-/* ---------- Guardar ---------- */
-.pf-save {
-  width: 100%;
-  min-height: 52px;
-  font-family: inherit;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-inverse);
-  background: linear-gradient(180deg, #4ee6d4 0%, #2bc9b7 100%);
-  border: 0;
-  border-radius: var(--radius-pill);
-  box-shadow: 0 10px 26px -14px rgba(47, 214, 196, 0.9);
-  transition: transform var(--duration-fast) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-
-.pf-save:active {
-  transform: scale(0.975);
-}
-
-.pf-save:disabled {
-  opacity: 0.55;
-}
-
-.pf-save:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(47, 214, 196, 0.4);
+  background: rgba(255, 90, 90, 0.1);
 }
 
 /* ---------- Cerrar sesión ---------- */
@@ -394,8 +323,8 @@
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
-  min-height: 48px;
-  margin-top: var(--space-4);
+  min-height: 50px;
+  margin-top: var(--space-8);
   font-family: inherit;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -410,19 +339,193 @@
   touch-action: manipulation;
 }
 
-.pf-signout svg {
+.pf-signout__ico {
+  display: inline-flex;
   flex: 0 0 auto;
+}
+
+.pf-signout.is-armed {
+  color: #ff9b9b;
+  border-color: rgba(255, 90, 90, 0.45);
+  background: rgba(255, 90, 90, 0.07);
+}
+
+.pf-signout:active {
+  transform: scale(0.985);
 }
 
 @media (hover: hover) {
   .pf-signout:hover {
     color: #ff9b9b;
-    border-color: rgba(255, 90, 90, 0.4);
+    border-color: rgba(255, 90, 90, 0.35);
   }
 }
 
-.pf-signout:active {
-  transform: scale(0.985);
+
+/* ==========================================================================
+   Sheet de edición
+   Se anima con transform + opacity únicamente: la capa se compone en GPU
+   sin repintar el fondo. Sin backdrop-filter a propósito.
+   ========================================================================== */
+
+.pf-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.pf-sheet[hidden] {
+  display: none;
+}
+
+.pf-sheet__veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.62);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+.pf-sheet.is-open .pf-sheet__veil {
+  opacity: 1;
+}
+
+.pf-sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-max-width);
+  padding: var(--space-2) var(--space-4)
+    calc(var(--space-5) + var(--safe-bottom));
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  transform: translate3d(0, 100%, 0);
+  transition: transform var(--duration-base) var(--ease-out);
+  will-change: transform;
+}
+
+.pf-sheet.is-open .pf-sheet__panel {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Al cerrarse deja de reservar una capa de GPU */
+.pf-sheet:not(.is-open) .pf-sheet__panel {
+  will-change: auto;
+}
+
+.pf-sheet__grip {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--space-3);
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-pill);
+}
+
+.pf-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.pf-sheet__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.015em;
+}
+
+.pf-sheet__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-muted);
+  border: 0;
+  border-radius: var(--radius-pill);
+  transition: color var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-sheet__x:active {
+  color: var(--color-text);
+}
+
+.pf-sheet__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-sheet__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.pf-sheet__input {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 var(--space-4);
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.pf-sheet__input:focus {
+  border-color: var(--color-brand);
+}
+
+.pf-sheet__input::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+}
+
+.pf-sheet__msg {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: #ffb4b4;
+}
+
+.pf-sheet__save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 54px;
+  margin-top: var(--space-4);
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-inverse);
+  background: linear-gradient(180deg, #4ee6d4 0%, #2bc9b7 100%);
+  border: 0;
+  border-radius: var(--radius-pill);
+  transition: transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.pf-sheet__save:active {
+  transform: scale(0.978);
+}
+
+.pf-sheet__save:disabled {
+  opacity: 0.5;
 }
 
 /* ---------- Cargando ---------- */
@@ -431,7 +534,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: var(--space-8) var(--space-4);
+  padding: var(--space-8);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
@@ -439,8 +542,8 @@
 .pf-loading__dot {
   width: 7px;
   height: 7px;
-  border-radius: var(--radius-pill);
   background: var(--color-brand);
+  border-radius: var(--radius-pill);
 }
 
 /* ---------- Falta configurar ---------- */
@@ -474,41 +577,14 @@
 
 /* ---------- Accesibilidad ---------- */
 @media (prefers-reduced-motion: reduce) {
+  .pf-sheet__veil,
+  .pf-sheet__panel,
   .pf-provider,
-  .pf-save,
+  .pf-row,
   .pf-signout,
-  .pf-field__box,
-  .pf-field__input--plain {
+  .pf-sheet__input,
+  .pf-sheet__save {
     transition: none;
   }
 }
 
-  line-height: 1.1;
-  color: var(--color-text);
-  overflow-wrap: anywhere;
-}
-
-.pf-hero__mail {
-  position: relative;
-  margin: 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  overflow-wrap: anywhere;
-}
-
-.pf-chip {
-  position: relative;
-  margin-top: var(--space-2);
-  padding: 4px 10px;
-  font-size: 0.6875rem;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-brand);
-  background: var(--color-brand-soft);
-  border-radius: var(--radius-pill);
-}
-
-.pf-chip[hidden] {
-  display: none;
-}
