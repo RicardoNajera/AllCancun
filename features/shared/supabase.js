@@ -99,18 +99,22 @@ export async function onAuthChange(callback) {
 
 /* ---- OAuth social ---- */
 
-export const PROVIDERS = [
-  { id: "google", label: "Google" },
-  { id: "apple", label: "Apple" },
-  { id: "facebook", label: "Facebook" },
-];
+/* Solo se listan los proveedores realmente activados en Supabase
+   (Authentication → Providers). Si activas otro más adelante, agrégalo aquí. */
+export const PROVIDERS = [{ id: "google", label: "Google" }];
 
 export async function signInWithProvider(provider) {
   const supabase = await getSupabase();
   if (!supabase) return { error: "Falta configurar Supabase." };
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: window.location.origin + window.location.pathname },
+    options: {
+      // Vuelve exactamente a la página donde se inició sesión
+      // (GitHub Pages o localhost). Debe estar en
+      // Authentication → URL Configuration → Redirect URLs.
+      redirectTo: window.location.origin + window.location.pathname,
+      queryParams: { prompt: "select_account" },
+    },
   });
   return { error: error?.message || null };
 }

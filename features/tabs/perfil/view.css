@@ -112,13 +112,6 @@
   height: 18px;
 }
 
-/* Apple: el logo blanco se lee mejor sobre fondo claro del botón */
-.pf-provider--apple {
-  color: var(--color-text-inverse);
-  background: var(--color-text);
-  border-color: transparent;
-}
-
 @media (hover: hover) {
   .pf-provider:not(:disabled):hover {
     filter: brightness(1.08);
@@ -308,49 +301,6 @@
     color: var(--color-text);
     border-color: var(--color-text-secondary);
   }
-}
-
-/* ---------- Datos de la tabla (solo lectura) ---------- */
-.pf-data {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin: 18px 0 0;
-  overflow: hidden;
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.pf-data__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  background: var(--color-surface);
-}
-
-.pf-data__row dt {
-  flex-shrink: 0;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-
-.pf-data__row dd {
-  margin: 0;
-  min-width: 0;
-  font-size: 0.78rem;
-  text-align: right;
-  color: var(--color-text);
-  overflow-wrap: anywhere;
-}
-
-.pf-data__row dd.is-empty {
-  font-style: italic;
-  color: var(--color-text-secondary);
-  opacity: 0.7;
 }
 
 /* ---------- Cargando ---------- */

@@ -2,13 +2,12 @@
  * All Cancún — Perfil · Vista
  * Contrato estándar de features (ver features/shared/shell.js).
  *
- * Login social con Supabase (Google, Apple, Facebook), sesión persistente y
- * edición de public.perfiles (apodo, nombre completo, foto). La anon key vive
- * en config.local.js; RLS decide a qué fila puede llegar el usuario.
+ * Login social con Supabase (Google), sesión persistente y edición de
+ * public.perfiles (apodo y nombre completo). La anon key vive en
+ * config.local.js; RLS decide a qué fila puede llegar el usuario.
  */
 
-import { hero, sectionTitle, note, escape } from "../../shared/ui.js";
-import { icons } from "../../../components/icons.js";
+import { hero, escape } from "../../shared/ui.js";
 import { content } from "./content.js";
 import {
   PROVIDERS,
@@ -21,20 +20,6 @@ import {
   getProfile,
   updateProfile,
 } from "../../shared/supabase.js";
-
-/* Fila del menú: icono + título + detalle + flecha */
-function row(item) {
-  return `
-    <li class="tv-row">
-      <span class="tv-row__icon" aria-hidden="true">${icons[item.icon] || icons.check}</span>
-      <span class="tv-row__text">
-        <span class="tv-row__label">${escape(item.label)}</span>
-        <span class="tv-row__detail">${escape(item.detail)}</span>
-      </span>
-      ${icons.arrowLeft}
-    </li>
-  `;
-}
 
 /* Logos de los proveedores (inline para no depender de red) */
 const providerLogo = (id) => {
@@ -114,7 +99,7 @@ export default {
           </div>
         </div>
 
-        <!-- Sesión activa: datos del perfil -->
+        <!-- Sesión activa: cuenta del usuario -->
         <div class="pf-account" data-pf="account" hidden>
           <div class="pf-account__head">
             <span class="pf-avatar">${avatarMarkup(null, null)}</span>
@@ -130,21 +115,14 @@ export default {
               <span class="pf-field__label">Apodo público</span>
               <input class="pf-field__input" type="text" name="apodo" maxlength="32"
                      autocomplete="nickname" placeholder="Cómo te verán los demás" />
-              <span class="pf-field__hint">Tu identidad pública y anónima.</span>
+              <span class="pf-field__hint">Los demás te ven así. Tu nombre real no se muestra.</span>
             </label>
 
             <label class="pf-field">
               <span class="pf-field__label">Nombre completo</span>
               <input class="pf-field__input" type="text" name="nombre_completo" maxlength="80"
                      autocomplete="name" placeholder="Solo lo ves tú" />
-              <span class="pf-field__hint">Privado: no se muestra en la app.</span>
-            </label>
-
-            <label class="pf-field">
-              <span class="pf-field__label">Foto de perfil (URL)</span>
-              <input class="pf-field__input" type="url" name="foto_perfil_url" inputmode="url"
-                     placeholder="Sin imagen todavía" />
-              <span class="pf-field__hint">Opcional. Si lo dejas vacío usamos tu inicial.</span>
+              <span class="pf-field__hint">Privado: nunca se muestra en la app.</span>
             </label>
 
             <p class="pf-form__status" data-pf-status role="status" hidden></p>
@@ -154,38 +132,6 @@ export default {
               <button type="button" class="pf-signout" data-pf-signout>Cerrar sesión</button>
             </div>
           </form>
-
-          <!-- Todos los campos de public.perfiles. "Vacío" si la base no trae dato -->
-          <dl class="pf-data">
-            <div class="pf-data__row">
-              <dt>Apodo</dt>
-              <dd data-pf-row="apodo">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>Nombre completo</dt>
-              <dd data-pf-row="nombre_completo">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>Foto de perfil</dt>
-              <dd data-pf-row="foto_perfil_url">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>Rol</dt>
-              <dd data-pf-row="rol">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>ID</dt>
-              <dd data-pf-row="id">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>Creado</dt>
-              <dd data-pf-row="creado_en">Vacío</dd>
-            </div>
-            <div class="pf-data__row">
-              <dt>Actualizado</dt>
-              <dd data-pf-row="actualizado_en">Vacío</dd>
-            </div>
-          </dl>
         </div>
 
         <!-- Cargando sesión -->
@@ -202,12 +148,6 @@ export default {
           </p>
         </div>
 
-        ${sectionTitle(content.sectionTitle)}
-        <ul class="tv-rows">
-          ${content.rows.map(row).join("")}
-        </ul>
-
-        ${note(content.note)}
       </div>
     `;
 
@@ -279,35 +219,7 @@ function mountLogin(root) {
     if (form) {
       form.elements.apodo.value = profile?.apodo || "";
       form.elements.nombre_completo.value = profile?.nombre_completo || "";
-      form.elements.foto_perfil_url.value = profile?.foto_perfil_url || "";
     }
-
-    /* Todos los campos de la tabla; "Vacío" si la base no trae el dato */
-    const fecha = (iso) => {
-      if (!iso) return "Vacío";
-      const d = new Date(iso);
-      return Number.isNaN(d.getTime()) ? "Vacío" : d.toLocaleString("es-MX");
-    };
-    const rows = {
-      apodo: profile?.apodo,
-      nombre_completo: profile?.nombre_completo,
-      foto_perfil_url: profile?.foto_perfil_url,
-      rol: profile?.rol,
-      id: session?.user?.id || profile?.id,
-      creado_en: profile?.creado_en,
-      actualizado_en: profile?.actualizado_en,
-    };
-
-    Object.entries(rows).forEach(([key, raw]) => {
-      const cell = root.querySelector(`[data-pf-row="${key}"]`);
-      if (!cell) return;
-      const value =
-        key === "creado_en" || key === "actualizado_en"
-          ? fecha(raw)
-          : String(raw || "").trim() || "Vacío";
-      cell.textContent = value;
-      cell.classList.toggle("is-empty", value === "Vacío");
-    });
   }
 
   /* Carga (o crea) el perfil del usuario y muestra la cuenta */
@@ -408,7 +320,6 @@ function mountLogin(root) {
     const { profile: updated, error } = await updateProfile(session.user.id, {
       apodo,
       nombre_completo: form.elements.nombre_completo.value,
-      foto_perfil_url: form.elements.foto_perfil_url.value,
     });
 
     if (disposed) return;
