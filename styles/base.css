@@ -13,7 +13,12 @@
 
 html {
   height: 100%;
+  /* Ancla la escala: el diseño se ve idéntico en Mac y en todo teléfono.
+     Sin esto, el "tamaño de texto" del navegador móvil infla el rem y
+     desacomoda la interfaz. 16px = base de escritorio. */
+  font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
