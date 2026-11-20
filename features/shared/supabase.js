@@ -136,6 +136,25 @@ export const PROFILE_FIELDS = [
 
 const SELECT = PROFILE_FIELDS.join(",");
 
+/** Apodo válido: minúsculas, sin acentos ni espacios, 3-32 caracteres.
+ *  Espeja el CHECK y la función normalizar_apodo() de la base.
+ *  Devuelve "" si no queda nada usable: entonces la app lo pide. */
+export function normalizarApodo(valor) {
+  if (typeof valor !== "string") return "";
+  return valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 32);
+}
+
+/** true si el apodo cumple la regla que exige la base. */
+export function apodoValido(valor) {
+  return /^[a-z0-9._-]{3,32}$/.test(String(valor || ""));
+}
+
 /** Lee el perfil del usuario. RLS limita la fila a id = auth.uid(). */
 export async function getProfile(userId) {
   const supabase = await getSupabase();
@@ -156,7 +175,13 @@ export async function updateProfile(userId, patch = {}) {
   if (!supabase || !userId) return { profile: null, error: "Sin sesión." };
 
   const payload = {};
-  if (typeof patch.apodo === "string") payload.apodo = patch.apodo.trim() || null;
+  /* El apodo se normaliza aquí: la base exige minúsculas, sin acentos
+     ni espacios (3-32). Si no queda nada usable se guarda null y la
+     vista vuelve a pedirlo. */
+  if (typeof patch.apodo === "string") {
+    const limpio = normalizarApodo(patch.apodo);
+    payload.apodo = limpio || null;
+  }
   if (typeof patch.nombre_completo === "string")
     payload.nombre_completo = patch.nombre_completo.trim() || null;
   if (typeof patch.foto_perfil_url === "string")
@@ -187,11 +212,18 @@ export async function ensureProfile(user) {
   /* Si la consulta falla (tabla/RLS aún sin configurar) se devuelve el error
      pero con profile null: el login sigue funcionando sin perfil. */
   const meta = user.user_metadata || {};
+  const candidato =
+    normalizarApodo(
+      meta.preferred_username || meta.given_name || meta.name || user.email?.split("@")[0] || ""
+    ) || null;
+
   const { data, error } = await supabase
     .from("perfiles")
     .insert({
       id: user.id,
-      apodo: meta.preferred_username || meta.name || user.email?.split("@")[0] || null,
+      /* null si el apodo no cumple: la base lo rechazaría por el CHECK
+         y prefiero que quede vacío para que la vista lo pida. */
+      apodo: apodoValido(candidato) ? candidato : null,
       nombre_completo: meta.full_name || meta.name || null,
       foto_perfil_url: meta.avatar_url || meta.picture || null,
     })
