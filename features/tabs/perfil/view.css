@@ -93,59 +93,97 @@
   opacity: 0.6;
 }
 
-/* ---------- Lo que gana al entrar (solo invitado) ---------- */
+/* ---------- Lo que gana al entrar: parrilla de tarjetas ---------- */
 .pf-perks {
   width: 100%;
   margin: var(--space-5) 0 0;
 }
 
-.pf-perks .pf-section {
-  margin-bottom: var(--space-2);
-  padding-left: 0;
+.pf-perks__label {
+  margin: 0 0 var(--space-3);
+  padding-left: 2px;
+  font-size: 0.6875rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
   text-align: left;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+.pf-perks__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
 .pf-perk {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--space-3);
+  overflow: hidden;
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  animation: pf-perk-in 380ms var(--ease-out) both;
+  animation-delay: calc(var(--pf-perk-i, 0) * 55ms);
 }
 
-.pf-perk + .pf-perk {
-  border-top: 1px solid var(--color-border);
+/* Halo de acento en la esquina: un solo gradiente, sin filtros */
+.pf-perk::after {
+  content: "";
+  position: absolute;
+  top: -34px;
+  right: -34px;
+  width: 88px;
+  height: 88px;
+  background: radial-gradient(circle, var(--pf-a) 0%, transparent 68%);
+  opacity: 0.22;
+  pointer-events: none;
 }
+
+.pf-perk--bag { --pf-a: var(--accent-tianguis); --pf-soft: var(--accent-tianguis-soft); }
+.pf-perk--pin { --pf-a: var(--accent-viajes); --pf-soft: var(--accent-viajes-soft); }
+.pf-perk--heart { --pf-a: var(--accent-mujeres); --pf-soft: var(--accent-mujeres-soft); }
+.pf-perk--bolt { --pf-a: var(--accent-mantenimiento); --pf-soft: var(--accent-mantenimiento-soft); }
 
 .pf-perk__ico {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  color: var(--color-brand);
-  background: var(--color-brand-soft);
-  border-radius: var(--radius-sm);
-}
-
-.pf-perk__text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 2px;
+  color: var(--pf-a, var(--color-brand));
+  background: var(--pf-soft, var(--color-brand-soft));
+  border-radius: 10px;
 }
 
 .pf-perk__title {
-  font-size: var(--font-size-sm);
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-semibold);
-  line-height: 1.3;
+  line-height: 1.25;
   color: var(--color-text);
 }
 
 .pf-perk__hint {
-  font-size: var(--font-size-xs);
-  line-height: 1.35;
+  font-size: 0.6875rem;
+  line-height: 1.4;
   color: var(--color-text-secondary);
+}
+
+@keyframes pf-perk-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* En pantallas muy angostas, una sola columna */
+@media (max-width: 340px) {
+  .pf-perks__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .pf-guest__error {
@@ -646,6 +684,10 @@
   .pf-sheet__input,
   .pf-sheet__save {
     transition: none;
+  }
+
+  .pf-perk {
+    animation: none;
   }
 }
 

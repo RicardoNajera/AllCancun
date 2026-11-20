@@ -138,19 +138,19 @@ export default {
 
           <!-- Lo que desbloquea la cuenta -->
           <div class="pf-perks">
-            <p class="pf-section">${escape(content.perksTitle)}</p>
-            ${content.perks
-              .map(
-                (perk) => `
-              <div class="pf-perk">
+            <p class="pf-perks__label">${escape(content.perksTitle)}</p>
+            <div class="pf-perks__grid">
+              ${content.perks
+                .map(
+                  (perk, i) => `
+              <div class="pf-perk pf-perk--${escape(perk.icon)}" style="--pf-perk-i:${i}">
                 <span class="pf-perk__ico" aria-hidden="true">${ico[perk.icon] || ico.user}</span>
-                <span class="pf-perk__text">
-                  <span class="pf-perk__title">${escape(perk.title)}</span>
-                  <span class="pf-perk__hint">${escape(perk.hint)}</span>
-                </span>
+                <span class="pf-perk__title">${escape(perk.title)}</span>
+                <span class="pf-perk__hint">${escape(perk.hint)}</span>
               </div>`
-              )
-              .join("")}
+                )
+                .join("")}
+            </div>
           </div>
 
           <p class="pf-guest__legal">${escape(content.loginLegal)}</p>
