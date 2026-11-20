@@ -174,7 +174,9 @@ export async function updateProfile(userId, patch = {}) {
   return { profile: data || null, error: error?.message || null };
 }
 
-/** Crea la fila si el trigger de alta todavía no la generó. */
+/** Crea la fila si el trigger de alta todavía no la generó.
+ *  No se envía `rol`: es enum rol_usuario NOT NULL con default 'cliente'.
+ *  Enviarlo como texto fallaría por tipo y además es un privilegio del sistema. */
 export async function ensureProfile(user) {
   const supabase = await getSupabase();
   if (!supabase || !user?.id) return { profile: null, error: "Sin sesión." };
