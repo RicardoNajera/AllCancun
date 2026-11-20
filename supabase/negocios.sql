@@ -174,19 +174,51 @@ returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+  tiene_permisos boolean;
 begin
+  -- ¿Ya existe la tabla permisos? (Si corres este archivo antes de
+  -- permisos.sql, el trigger no truena: solo se salta esa parte.)
+  select to_regclass('public.permisos') is not null
+    into tiene_permisos;
+
   if new.estado = 'activo' then
+    -- 1) Otorga el permiso de vender (lo que de verdad importa).
+    --    Se acumula: no borra 'comprar' ni 'conducir'.
+    if tiene_permisos then
+      insert into public.permisos (perfil_id, permiso)
+      values (new.dueno_id, 'vender'::public.tipo_permiso)
+      on conflict (perfil_id, permiso)
+        do update set activo = true;
+      update public.permisos
+         set activo = true
+       where perfil_id = new.dueno_id
+         and permiso = 'vender'::public.tipo_permiso;
+    end if;
+
+    -- 2) El rol principal solo sube desde 'cliente'.
+    --    Un 'operador' que abre un negocio sigue siendo operador:
+    --    su permiso de conducir nunca se pierde.
     update public.perfiles
        set rol = 'comercio'
      where id = new.dueno_id
-       and rol = 'cliente';   -- solo sube, nunca degrada
+       and rol = 'cliente';
   end if;
+
+  -- Si el negocio se suspende, se revoca el permiso de vender
+  if new.estado = 'suspendido' and tiene_permisos then
+    update public.permisos
+       set activo = false
+     where perfil_id = new.dueno_id
+       and permiso = 'vender'::public.tipo_permiso;
+  end if;
+
   return new;
 end;
 $$;
 
 comment on function public.elevar_rol_dueno_negocio() is
-  'Cuando un negocio se activa, el dueño pasa de cliente a comercio. Solo eleva el rol, nunca lo baja.';
+  'Al activar un negocio otorga el permiso vender y sube el rol principal solo si era cliente. Al suspenderlo revoca el permiso.';
 
 create trigger al_elevar_rol_dueno
   after insert or update of estado on public.negocios
