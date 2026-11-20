@@ -7,7 +7,7 @@
  * config.local.js; RLS decide a qué fila puede llegar el usuario.
  */
 
-import { hero, escape } from "../../shared/ui.js";
+import { escape } from "../../shared/ui.js";
 import { content } from "./content.js";
 import {
   PROVIDERS,
@@ -62,12 +62,7 @@ export default {
     const configured = isConfigured();
 
     const html = `
-      ${hero({
-        eyebrow: content.eyebrow,
-        title: content.title,
-        lead: content.lead,
-        status: content.status,
-      })}
+      ${""}
 
       <div class="tv-body pf-root">
         <!-- Invitado: acceso con Google -->

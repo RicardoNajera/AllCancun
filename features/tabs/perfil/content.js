@@ -5,12 +5,11 @@
 
 export const content = {
   eyebrow: "",
-  title: "Perfil",
-  lead: "Tu identidad en All Cancún.",
+  title: "",
+  lead: "",
   status: "",
   loginTitle: "Entra a All Cancún",
-  loginLead:
-    "Con tu cuenta guardas tu apodo y tus favoritos en cualquier dispositivo.",
+  loginLead: "Un toque con Google. Listo.",
   loginLegal: "Al continuar aceptas los términos y el aviso de privacidad.",
   sectionTitle: "",
   rows: [],
