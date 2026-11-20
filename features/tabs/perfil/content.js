@@ -31,9 +31,11 @@ export const content = {
 
   /* Filas del panel de identidad (abren un editor) */
   rows: [
-    { id: "apodo", label: "Apodo público", hint: "Cómo te ven los demás" },
     { id: "nombre_completo", label: "Nombre completo", hint: "Solo lo ves tú" },
   ],
+
+  /* Ajustes de cuenta */
+  settingsLabel: "Ajustes de cuenta",
 
   note: "",
 };

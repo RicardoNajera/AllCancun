@@ -67,6 +67,9 @@ const ico = {
   bolt: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <path d="M13.4 2.5 5 13.6h5.4L9.9 21.5 18.5 10h-5.6Z"/></svg>`,
+  pencil: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+    stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M16.5 3.9a2.1 2.1 0 0 1 3 3L8.4 18l-4 1 1-4Z"/></svg>`,
 };
 
 const ROW_ICONS = { apodo: ico.user, nombre_completo: ico.signature };
@@ -159,23 +162,33 @@ export default {
         <!-- Cuenta activa -->
         <div class="pf-account" data-pf="account" hidden>
 
+          <!-- Identidad: avatar grande, nombre y apodo editable -->
           <header class="pf-id">
             <span class="pf-avatar" data-pf-avatar-slot></span>
-            <div class="pf-id__text">
-              <h2 class="pf-id__apodo" data-pf-apodo>—</h2>
-              <p class="pf-id__mail" data-pf-email></p>
-            </div>
+            <h2 class="pf-id__name" data-pf-name>—</h2>
+            <button type="button" class="pf-id__apodo" data-pf-row="apodo"
+                    aria-label="Editar apodo">
+              <span class="pf-id__apodo-text" data-pf-apodo>—</span>
+              <span class="pf-id__pencil" aria-hidden="true">${ico.pencil}</span>
+            </button>
           </header>
 
           <p class="pf-section">${escape(content.accountSectionLabel)}</p>
           <div class="pf-list">${rows}</div>
 
-          <p class="pf-account__status" data-pf-status role="status" hidden></p>
+          <p class="pf-section">${escape(content.settingsLabel)}</p>
+          <div class="pf-list">
+            <button type="button" class="pf-row pf-row--danger" data-pf-signout
+                    aria-label="Cerrar sesión">
+              <span class="pf-row__ico" aria-hidden="true">${ico.logout}</span>
+              <span class="pf-row__text">
+                <span class="pf-row__label" data-pf-signout-label>Cerrar sesión</span>
+              </span>
+              <span class="pf-row__chev" aria-hidden="true">${ico.chevron}</span>
+            </button>
+          </div>
 
-          <button type="button" class="pf-signout" data-pf-signout>
-            <span class="pf-signout__ico" aria-hidden="true">${ico.logout}</span>
-            <span data-pf-signout-label>Cerrar sesión</span>
-          </button>
+          <p class="pf-account__status" data-pf-status role="status" hidden></p>
         </div>
 
         <!-- Cargando -->
@@ -262,8 +275,8 @@ function mountLogin(root) {
   const errorBox = $("[data-pf-error]");
   const statusBox = $("[data-pf-status]");
   const avatarSlot = $("[data-pf-avatar-slot]");
+  const nameLabel = $("[data-pf-name]");
   const apodoLabel = $("[data-pf-apodo]");
-  const emailLabel = $("[data-pf-email]");
   const signoutBtn = $("[data-pf-signout]");
 
   const sheet = $("[data-pf-sheet]");
@@ -308,8 +321,19 @@ function mountLogin(root) {
     const fallback = session?.user?.user_metadata?.name || session?.user?.email || "";
     if (avatarSlot) avatarSlot.innerHTML = avatarMarkup(profile, fallback);
 
-    if (apodoLabel) apodoLabel.textContent = profile?.apodo || "Tu perfil";
-    if (emailLabel) emailLabel.textContent = session?.user?.email || "";
+    /* Nombre grande: el de Google (o el nombre completo si lo puso) */
+    if (nameLabel) {
+      const full = String(profile?.nombre_completo ?? "").trim();
+      const google = String(
+        session?.user?.user_metadata?.full_name ||
+          session?.user?.user_metadata?.name ||
+          ""
+      ).trim();
+      nameLabel.textContent = full || google || "Sin nombre";
+    }
+
+    /* Apodo editable */
+    if (apodoLabel) apodoLabel.textContent = profile?.apodo || "Elige un apodo";
 
     content.rows.forEach((row) => {
       const node = $(`[data-pf-value="${row.id}"]`);
@@ -513,7 +537,7 @@ function mountLogin(root) {
     if (signoutBtn.dataset.armed !== "1") {
       signoutBtn.dataset.armed = "1";
       signoutBtn.classList.add("is-armed");
-      if (label) label.textContent = "Toca de nuevo para salir";
+      if (label) label.textContent = "¿Seguro que quieres salir?";
       clearTimeout(disarmTimer);
       disarmTimer = setTimeout(() => {
         if (!signoutBtn) return;
