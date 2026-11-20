@@ -9,6 +9,11 @@
    · Una sola capa de degradado por bloque
    ========================================================================== */
 
+/* El atributo hidden debe ganar SIEMPRE a display:flex de cada bloque */
+.pf-root [hidden] {
+  display: none !important;
+}
+
 .pf-root {
   padding-bottom: calc(var(--space-8) + var(--safe-bottom));
 }
