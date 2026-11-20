@@ -55,7 +55,7 @@ export function renderHeader(mount) {
       aria-label="Instalar All Cancún en este dispositivo"
     >
       ${icons.install}
-      <span>Instalar</span>
+      <span class="install-button__label">Instalar</span>
     </button>
     <div class="install-sheet" id="install-sheet" hidden>
       <div class="install-sheet__backdrop" data-install-close></div>

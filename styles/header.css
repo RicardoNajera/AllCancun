@@ -86,57 +86,54 @@
   margin-top: 2px;
 }
 
-/* Botón Instalar: píldora de vidrio, anclada arriba a la derecha del
-   app-shell. Nunca usa 100vw: en escritorio se quedaría fuera del marco. */
+/* Botón Instalar: píldora anclada a la esquina superior derecha del
+   app-shell. Ancho simétrico, 44px de alto (objetivo táctil accesible) e
+   ícono y texto centrados en un solo eje. */
 .install-button {
   position: fixed;
-  top: calc(var(--safe-top) + 13px);
-  /* Se ancla al borde derecho del app-shell sin depender de transform,
-     para que el estado :active pueda animar el scale sin pelear. */
-  left: calc(50% + min(var(--app-max-width), 100vw) / 2 - var(--space-4));
+  top: calc(var(--safe-top) + 10px);
+  /* Se ancla al borde derecho real del app-shell, sin transform: así el
+     :active puede animar scale sin desplazar el botón. */
+  right: max(var(--space-4), calc((100vw - var(--app-max-width)) / 2 + var(--space-4)));
   z-index: 102;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 27px;
-  padding: 0 11px 0 9px;
-  translate: -100% 0;
+  gap: 7px;
+  height: 44px;
+  padding: 0 16px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(47, 214, 196, 0.34);
-  background: rgba(20, 45, 48, 0.55);
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
-  color: #8ff0e4;
-  font-size: 10.5px;
+  border: 1px solid rgba(47, 214, 196, 0.42);
+  background: linear-gradient(180deg,
+      rgba(35, 82, 86, 0.82) 0%,
+      rgba(20, 45, 48, 0.82) 100%);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  color: #a6f4ea;
+  font-family: inherit;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: 0.01em;
   white-space: nowrap;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07) inset,
-    0 8px 20px -12px rgba(0, 0, 0, 0.9);
-  transition: background-color 160ms var(--ease-out),
-    border-color 160ms var(--ease-out),
-    opacity 160ms var(--ease-out);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 10px 24px -14px rgba(0, 0, 0, 0.95);
+  transition: background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    transform 140ms var(--ease-out),
+    opacity 180ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.install-button[hidden] {
-  display: none;
-}
-
-.install-button:active {
-  background: rgba(47, 214, 196, 0.22);
-  border-color: rgba(47, 214, 196, 0.6);
-}
-
-.install-button.is-optional-hidden {
-  opacity: 0;
-  pointer-events: none;
+.install-button__label {
+  /* Centrado óptico: la mayúscula inicial deja aire a la izquierda */
+  padding-top: 1px;
 }
 
 .install-button svg {
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   flex: 0 0 auto;
 }
 
@@ -146,16 +143,28 @@
 
 .install-button:active {
   transform: scale(0.96);
+  background: rgba(47, 214, 196, 0.26);
+}
+
+@media (hover: hover) {
+  .install-button:hover {
+    color: #c4faf3;
+    border-color: rgba(47, 214, 196, 0.7);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset,
+      0 14px 30px -14px rgba(0, 0, 0, 0.95),
+      0 0 0 3px rgba(47, 214, 196, 0.12);
+  }
+}
+
+.install-button:focus-visible {
+  outline: none;
+  border-color: rgba(47, 214, 196, 0.85);
+  box-shadow: 0 0 0 3px rgba(47, 214, 196, 0.28);
 }
 
 .install-button.is-optional-hidden {
   opacity: 0;
   pointer-events: none;
-}
-
-.install-button svg {
-  width: 16px;
-  height: 16px;
 }
 
 /* ---- Hoja de instrucciones de instalación ---- */

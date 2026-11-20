@@ -129,9 +129,21 @@ export default {
 
             <div class="pf-form__actions">
               <button type="submit" class="tv-cta pf-save" data-pf-save>Guardar cambios</button>
-              <button type="button" class="pf-signout" data-pf-signout>Cerrar sesión</button>
             </div>
           </form>
+
+          <div class="pf-signout__wrap">
+            <button type="button" class="pf-signout" data-pf-signout
+                    aria-label="Cerrar sesión" title="Cerrar sesión">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+                   stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true" focusable="false">
+                <path d="M15 17l5-5-5-5" />
+                <path d="M20 12H9" />
+                <path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Cargando sesión -->
