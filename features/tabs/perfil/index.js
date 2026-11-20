@@ -53,6 +53,20 @@ const ico = {
   close: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
     stroke-width="2.1" stroke-linecap="round" aria-hidden="true">
     <path d="m6 6 12 12M18 6 6 18"/></svg>`,
+  bag: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M4.5 8h15l-1.1 11.2a1.6 1.6 0 0 1-1.6 1.4H7.2a1.6 1.6 0 0 1-1.6-1.4Z"/>
+    <path d="M8.8 8V6.2a3.2 3.2 0 0 1 6.4 0V8"/></svg>`,
+  pin: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 21s6.6-6 6.6-11A6.6 6.6 0 0 0 5.4 10c0 5 6.6 11 6.6 11Z"/>
+    <circle cx="12" cy="10" r="2.4"/></svg>`,
+  heart: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 20s-7.5-4.6-7.5-9.6A4.4 4.4 0 0 1 12 7.4a4.4 4.4 0 0 1 7.5 3c0 5-7.5 9.6-7.5 9.6Z"/></svg>`,
+  bolt: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M13.4 2.5 5 13.6h5.4L9.9 21.5 18.5 10h-5.6Z"/></svg>`,
 };
 
 const ROW_ICONS = { apodo: ico.user, nombre_completo: ico.signature };
@@ -115,12 +129,30 @@ export default {
               <button type="button" class="pf-provider" data-pf-provider="${p.id}"
                       aria-label="Continuar con ${escape(p.label)}">
                 <span class="pf-provider__icon" aria-hidden="true">${googleLogo}</span>
-                <span>Continuar con ${escape(p.label)}</span>
+                <span>${escape(content.loginCta)}</span>
               </button>`
             ).join("")}
           </div>
 
           <p class="pf-guest__error" data-pf-error role="alert" hidden></p>
+
+          <!-- Lo que desbloquea la cuenta -->
+          <div class="pf-perks">
+            <p class="pf-section">${escape(content.perksTitle)}</p>
+            ${content.perks
+              .map(
+                (perk) => `
+              <div class="pf-perk">
+                <span class="pf-perk__ico" aria-hidden="true">${ico[perk.icon] || ico.user}</span>
+                <span class="pf-perk__text">
+                  <span class="pf-perk__title">${escape(perk.title)}</span>
+                  <span class="pf-perk__hint">${escape(perk.hint)}</span>
+                </span>
+              </div>`
+              )
+              .join("")}
+          </div>
+
           <p class="pf-guest__legal">${escape(content.loginLegal)}</p>
         </div>
 
