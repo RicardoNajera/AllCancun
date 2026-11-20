@@ -69,21 +69,26 @@ export default {
         status: content.status,
       })}
 
-      <div class="tv-body">
-        <!-- Invitado: login social -->
+      <div class="tv-body pf-root">
+        <!-- Invitado: acceso con Google -->
         <div class="pf-auth" data-pf="guest" ${configured ? "" : "hidden"}>
           <div class="pf-auth__card">
-            <span class="pf-avatar pf-avatar--lg" data-pf-avatar aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
-                   stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <div class="pf-auth__halo" aria-hidden="true"></div>
+            <span class="pf-avatar pf-avatar--xl" data-pf-avatar aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor"
+                   stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="8" r="4" />
                 <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
               </svg>
             </span>
+
+            <h2 class="pf-auth__title">${escape(content.loginTitle)}</h2>
+            <p class="pf-auth__lead">${escape(content.loginLead)}</p>
+
             <div class="pf-providers">
               ${PROVIDERS.map(
                 (p) => `
-                <button type="button" class="pf-provider pf-provider--${p.id}"
+                <button type="button" class="pf-provider"
                         data-pf-provider="${p.id}" aria-label="Continuar con ${escape(p.label)}">
                   <span class="pf-provider__icon" aria-hidden="true">${providerLogo(p.id)}</span>
                   <span class="pf-provider__label">Continuar con ${escape(p.label)}</span>
@@ -91,59 +96,58 @@ export default {
               ).join("")}
             </div>
 
-            <p class="pf-auth__title">${escape(content.loginTitle)}</p>
-            <p class="pf-auth__lead">${escape(content.loginLead)}</p>
-
             <p class="pf-auth__error" data-pf-error role="alert" hidden></p>
             <p class="pf-auth__legal">${escape(content.loginLegal)}</p>
           </div>
         </div>
 
-        <!-- Sesión activa: cuenta del usuario -->
+        <!-- Sesión activa -->
         <div class="pf-account" data-pf="account" hidden>
-          <div class="pf-account__head">
-            <span class="pf-avatar">${avatarMarkup(null, null)}</span>
-            <div class="pf-account__id">
-              <span class="pf-account__apodo" data-pf-apodo>—</span>
-              <span class="pf-account__mail" data-pf-email></span>
-            </div>
-            <span class="pf-badge" data-pf-rol hidden></span>
-          </div>
+          <header class="pf-hero">
+            <div class="pf-hero__glow" aria-hidden="true"></div>
+            <span class="pf-avatar pf-avatar--xl" data-pf-avatar-slot></span>
+            <h2 class="pf-hero__apodo" data-pf-apodo>—</h2>
+            <p class="pf-hero__mail" data-pf-email></p>
+            <span class="pf-chip" data-pf-rol hidden></span>
+          </header>
 
           <form class="pf-form" data-pf-form novalidate>
-            <label class="pf-field">
-              <span class="pf-field__label">Apodo público</span>
-              <input class="pf-field__input" type="text" name="apodo" maxlength="32"
-                     autocomplete="nickname" placeholder="Cómo te verán los demás" />
-              <span class="pf-field__hint">Los demás te ven así. Tu nombre real no se muestra.</span>
-            </label>
+            <div class="pf-card">
+              <label class="pf-field">
+                <span class="pf-field__label">Apodo público</span>
+                <div class="pf-field__box">
+                  <span class="pf-field__at" aria-hidden="true">@</span>
+                  <input class="pf-field__input" type="text" name="apodo" maxlength="32"
+                         autocomplete="nickname" spellcheck="false" placeholder="tu apodo" />
+                </div>
+                <span class="pf-field__hint">Así te ven los demás. Tu nombre real no se muestra.</span>
+              </label>
 
-            <label class="pf-field">
-              <span class="pf-field__label">Nombre completo</span>
-              <input class="pf-field__input" type="text" name="nombre_completo" maxlength="80"
-                     autocomplete="name" placeholder="Solo lo ves tú" />
-              <span class="pf-field__hint">Privado: nunca se muestra en la app.</span>
-            </label>
+              <label class="pf-field">
+                <span class="pf-field__label">Nombre completo</span>
+                <input class="pf-field__input pf-field__input--plain" type="text"
+                       name="nombre_completo" maxlength="80"
+                       autocomplete="name" placeholder="Solo lo ves tú" />
+                <span class="pf-field__hint">Privado. Nunca aparece en la app.</span>
+              </label>
+            </div>
 
             <p class="pf-form__status" data-pf-status role="status" hidden></p>
 
-            <div class="pf-form__actions">
-              <button type="submit" class="tv-cta pf-save" data-pf-save>Guardar cambios</button>
-            </div>
+            <button type="submit" class="pf-save" data-pf-save>
+              <span data-pf-save-label>Guardar cambios</span>
+            </button>
           </form>
 
-          <div class="pf-signout__wrap">
-            <button type="button" class="pf-signout" data-pf-signout
-                    aria-label="Cerrar sesión" title="Cerrar sesión">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
-                   stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-                   aria-hidden="true" focusable="false">
-                <path d="M15 17l5-5-5-5" />
-                <path d="M20 12H9" />
-                <path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
-              </svg>
-            </button>
-          </div>
+          <button type="button" class="pf-signout" data-pf-signout>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true">
+              <path d="M15 17l5-5-5-5" /><path d="M20 12H9" />
+              <path d="M12 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6" />
+            </svg>
+            Cerrar sesión
+          </button>
         </div>
 
         <!-- Cargando sesión -->
@@ -185,11 +189,12 @@ function mountLogin(root) {
   const form = $("[data-pf-form]");
   const errorBox = $("[data-pf-error]");
   const statusBox = $("[data-pf-status]");
-  const avatarSlot = $(".pf-account .pf-avatar");
+  const avatarSlot = $("[data-pf-avatar-slot]");
   const apodoLabel = $("[data-pf-apodo]");
   const emailLabel = $("[data-pf-email]");
   const rolBadge = $("[data-pf-rol]");
   const saveBtn = $("[data-pf-save]");
+  const saveLabel = $("[data-pf-save-label]");
 
   let session = null;
   let profile = null;
@@ -327,7 +332,7 @@ function mountLogin(root) {
 
     setStatus(null);
     saveBtn.disabled = true;
-    saveBtn.textContent = "Guardando…";
+    if (saveLabel) saveLabel.textContent = "Guardando…";
 
     const { profile: updated, error } = await updateProfile(session.user.id, {
       apodo,
@@ -336,7 +341,7 @@ function mountLogin(root) {
 
     if (disposed) return;
     saveBtn.disabled = false;
-    saveBtn.textContent = "Guardar cambios";
+    if (saveLabel) saveLabel.textContent = "Guardar cambios";
 
     if (error) {
       const dup = /duplicate|unique/i.test(error);
