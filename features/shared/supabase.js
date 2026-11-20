@@ -1,10 +1,10 @@
 /**
  * All Cancún — Cliente de Supabase
  *
- * Credenciales (igual que el token de Mapbox): se leen de config.local.js,
+ * Credenciales (igual que el token de Mapbox): se leen de config.js,
  * que está ignorado por git. Nunca se escribe la anon key en el repositorio.
  *
- *   // config.local.js
+ *   // config.js
  *   window.ALL_CANCUN_SUPABASE_URL = "https://xxxx.supabase.co";
  *   window.ALL_CANCUN_SUPABASE_ANON_KEY = "eyJhbGciOi...";
  *

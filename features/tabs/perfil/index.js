@@ -8,7 +8,7 @@
  *
  * Login social con Supabase (Google), sesión persistente y edición de
  * public.perfiles (apodo y nombre completo). La anon key vive en
- * config.local.js; RLS decide a qué fila puede llegar el usuario.
+ * config.js; RLS decide a qué fila puede llegar el usuario.
  */
 
 import { escape } from "../../shared/ui.js";
@@ -188,7 +188,7 @@ export default {
           <p class="pf-setup__title">Falta conectar Supabase</p>
           <p class="pf-setup__text">
             Añade <code>ALL_CANCUN_SUPABASE_URL</code> y
-            <code>ALL_CANCUN_SUPABASE_ANON_KEY</code> en <code>config.local.js</code>.
+            <code>ALL_CANCUN_SUPABASE_ANON_KEY</code> en <code>config.js</code>.
           </p>
         </div>
 

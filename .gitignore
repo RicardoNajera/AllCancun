@@ -11,7 +11,9 @@ node_modules/
 # Entorno
 .env
 .env.local
-config.local.js
+
+# config.js SÍ se versiona: contiene la anon key pública de Supabase
+# (protegida por RLS). Lo que nunca debe subir es una service_role key.
 
 # Editores
 .vscode/

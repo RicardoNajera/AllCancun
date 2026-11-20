@@ -1,5 +1,5 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v89";
+const CACHE_VERSION = "v90";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -111,11 +111,11 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
 
-  /* Config local (token de Mapbox): NUNCA se cachea.
-     - "cache primero" la congelaba: al agregar el token en Android seguía
-       sirviendo el 404/HTML viejo y la app pedía el token aunque ya existiera.
+  /* Configuración pública: NUNCA se cachea.
+     - "cache primero" la congelaba: al cambiar credenciales seguía sirviendo
+       la versión vieja y la app no conectaba.
      - "red primero + no-store": siempre la versión actual del servidor. */
-  if (new URL(request.url).pathname.endsWith("/config.local.js")) {
+  if (new URL(request.url).pathname.endsWith("/config.js")) {
     event.respondWith(
       fetch(new Request(request, { cache: "no-store" })).catch(
         () => new Response("", { status: 404, headers: { "Content-Type": "text/javascript" } })

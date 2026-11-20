@@ -359,7 +359,7 @@ export default {
 
       let token = getToken();
       /* En Android el token puede agregarse después de montar la vista
-         (config.local.js nueva o ?mapbox=...). Se reintenta leerlo. */
+         (config.js nueva o ?mapbox=...). Se reintenta leerlo. */
       const tokenActual = () => {
         if (!token) token = getToken();
         return token;

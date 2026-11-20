@@ -4,7 +4,7 @@
  * Rutas y geocodificación: Mapbox Directions + Geocoding (requieren token).
  *
  * El token NO se versiona. Se resuelve en este orden:
- *   1. window.ALL_CANCUN_MAPBOX_TOKEN  (config.local.js, ignorado por git)
+ *   1. window.ALL_CANCUN_MAPBOX_TOKEN  (config.js, ignorado por git)
  *   2. ?mapbox=TOKEN en la URL
  *   3. localStorage["all-cancun:mapbox-token"]
  */
