@@ -6,7 +6,7 @@
  * Nadie más escribe la URL ni sincroniza el dock.
  */
 
-import { renderHeader } from "./components/header.js";
+import { renderHeader, setHeaderBack } from "./components/header.js";
 import { renderCategoryGrid } from "./components/category-grid.js";
 import { renderDock, dock } from "./components/dock.js";
 import { createNavigator, resolve } from "./features/router.js";
@@ -30,7 +30,10 @@ function renderHome(screen) {
 /* Pestaña del dock que corresponde a un destino */
 function tabFor(route) {
   if (!route) return "inicio";
-  if (["inicio", "carrito", "en-curso", "perfil", "asistente"].includes(route)) return route;
+  // Una ficha ("comercios/hilo-y-trapillo") no resalta pestaña, igual
+  // que una categoría.
+  const base = String(route).split("/")[0];
+  if (["inicio", "carrito", "en-curso", "perfil", "asistente"].includes(base)) return base;
   return null; // una categoría no resalta ninguna pestaña
 }
 
@@ -61,6 +64,18 @@ function mountApp() {
       dock.setActive(tabId);
       // El asistente ocupa toda la pantalla: adiós header y barra inferior.
       setImmersive(IMMERSIVE.has(route));
+
+      /* El botón "regresar" de la barra aparece en todas las vistas para que
+         el cliente siempre tenga salida sin importar cuánto haya bajado.
+         Solo se oculta en el inicio (no hay a dónde volver) y en el
+         asistente (ocupa toda la pantalla con su propia cabecera). */
+      const partes = String(route || "").split("/");
+      const base = partes[0];
+      const enFicha = base === "comercios" && Boolean(partes[1]);
+      const conBoton = Boolean(base) && !IMMERSIVE.has(base);
+      setHeaderBack(conBoton, () =>
+        enFicha ? nav.go("comercios") : nav.go("inicio")
+      );
     },
   });
 

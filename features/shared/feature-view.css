@@ -677,3 +677,10 @@
   }
 }
 
+
+/* El botón de volver de cada vista se oculta: la barra de arriba ya tiene
+   uno fijo que se alcanza aunque el cliente haya bajado hasta el final. */
+.fv-back,
+.mt-fab--back {
+  display: none;
+}

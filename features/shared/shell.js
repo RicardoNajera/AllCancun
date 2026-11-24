@@ -61,6 +61,11 @@ export function mountFeature(mount, feature, context = {}) {
     category: context.category,
     navigate: context.navigate,
     back: context.back,
+    /* Ruta completa ("comercios/hilo-y-trapillo"). Necesaria porque el hash
+       del navegador se escribe después del render: leerlo ahí da la ruta
+       anterior y la vista no sabe si mostrar lista o ficha. */
+    route: context.route,
+    base: context.base,
     ...feature.content,
   });
 

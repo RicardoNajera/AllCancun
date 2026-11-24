@@ -1,6 +1,9 @@
 /* All Cancún - Service Worker (PWA) */
-const CACHE_VERSION = "v93";
+const CACHE_VERSION = "v101";
 const CACHE_NAME = `all-cancun-${CACHE_VERSION}`;
+/* Respuestas de Supabase (lista de comercios, menús). Se separa del shell
+   para poder borrarlo solo cuando cambia la versión, no en cada visita. */
+const CACHE_DATOS = `all-cancun-datos-${CACHE_VERSION}`;
 
 const APP_SHELL = [
   "./",
@@ -40,6 +43,15 @@ const APP_SHELL = [
   "./features/mototaxis/content.js",
   "./features/mototaxis/map.js",
   "./features/mototaxis/view.css",
+  "./features/shared/supabase.js",
+  "./features/comercios/index.js",
+  "./features/comercios/content.js",
+  "./features/comercios/datos.js",
+  "./features/comercios/bits.js",
+  "./features/comercios/vista-lista.js",
+  "./features/comercios/vista-ficha.js",
+  "./features/comercios/vista-estados.js",
+  "./features/comercios/view.css",
   "./assets/images/comercios-1.jpg",
   "./assets/images/comercios-2.jpg",
   "./assets/images/comercios-3.jpg",
@@ -89,6 +101,8 @@ const APP_SHELL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
+  "./features/carrito/datos.js",
+  "./features/tabs/carrito/index.js",
 ];
 
 
@@ -99,10 +113,15 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
+  /* Al subir de versión se borran los cachés viejos, incluido el de datos.
+     Se conservan solo las dos familias actuales: shell (CACHE_NAME) y
+     respuestas de Supabase (CACHE_DATOS). */
+  const vigentes = new Set([CACHE_NAME, CACHE_DATOS]);
+
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => !vigentes.has(k)).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -138,7 +157,15 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Estáticos: cache primero, luego red
+  /* Consultas a Supabase: "red primero, caché de respaldo" con vigencia corta.
+     Sin esto, cada apertura de la app vuelve a bajar la lista completa y el
+     egress de Supabase crece con cada visita. Con 5 minutos de vigencia, el
+     visitante que abre la app varias veces al día consume una sola consulta. */
+  if (request.url.includes(".supabase.co/rest/v1/")) {
+    event.respondWith(redPrimeroConCache(request, 5 * 60 * 1000));
+    return;
+  }
+  /* Estáticos: cache primero, luego red */
   event.respondWith(
     caches.match(request).then((cached) => {
       return (
@@ -154,3 +181,37 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+/* ---------------------------------------------------------------------------
+   Red primero, caché de respaldo, con vigencia.
+   La marca de tiempo viaja en una cabecera propia de la copia guardada,
+   así no hace falta mantener un índice aparte.
+   ------------------------------------------------------------------------- */
+async function redPrimeroConCache(request, vigenciaMs) {
+  const cache = await caches.open(CACHE_DATOS);
+
+  try {
+    const response = await fetch(request);
+
+    // Solo se guardan respuestas buenas: un 401 o un 500 no debe quedarse.
+    if (response && response.status === 200) {
+      const cuerpo = await response.clone().blob();
+      const headers = new Headers(response.headers);
+      headers.set("x-guardado-en", String(Date.now()));
+      cache.put(request, new Response(cuerpo, { status: 200, headers }));
+    }
+
+    return response;
+  } catch (error) {
+    const guardada = await cache.match(request);
+    if (!guardada) throw error;
+
+    /* Sin señal se devuelve la copia aunque sea vieja: mostrar los comercios
+       de hace un rato es mejor que una pantalla vacía. Se refresca sola en
+       segundo plano para la próxima apertura. */
+    const guardadoEn = Number(guardada.headers.get("x-guardado-en") || 0);
+    if (Date.now() - guardadoEn > vigenciaMs) fetch(request).catch(() => {});
+
+    return guardada;
+  }
+}

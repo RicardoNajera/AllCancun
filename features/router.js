@@ -6,6 +6,10 @@
  * Combina dos espacios de nombres:
  *   - categorías: #mototaxis, #comida, …        (registry.js)
  *   - pestañas:   #inicio, #carrito, #en-curso, #perfil (tabs.js)
+ *
+ * Una ruta puede llevar un segundo tramo con `/`: "#comercios/hilo-y-trapillo".
+ * La feature dueña de la primera parte decide qué hacer con él (su ficha,
+ * su producto, etc.). El router no interpreta ese tramo, solo lo deja pasar.
  */
 
 import { mountFeature } from "./shared/shell.js";
@@ -19,15 +23,27 @@ let currentKind = null;
 export const getCurrentFeature = () => currentId;
 export const getCurrentView = () => ({ id: currentId, kind: currentKind });
 
+/* "#comercios/hilo-y-trapillo" → { base: "comercios", resto: "hilo-y-trapillo" } */
+export function partesDeRuta(target) {
+  const limpio = String(target || "").replace(/^#/, "");
+  const corte = limpio.indexOf("/");
+  if (corte === -1) return { base: limpio, resto: "" };
+  return { base: limpio.slice(0, corte), resto: limpio.slice(corte + 1) };
+}
+
 /* Resuelve cualquier destino a su definición. null = no navegable. */
 export function resolve(target) {
   if (!target) return null;
-  if (tabs[target]) {
-    const { meta, ...rest } = tabs[target];
-    return { ...rest, id: target, kind: "tab", meta };
+
+  // Se mira solo la primera parte: una ficha sigue siendo su categoría.
+  const { base } = partesDeRuta(target);
+
+  if (tabs[base]) {
+    const { meta, ...rest } = tabs[base];
+    return { ...rest, id: base, kind: "tab", meta };
   }
-  if (registry[target]) {
-    return { id: target, kind: "category", loader: registry[target] };
+  if (registry[base]) {
+    return { id: base, kind: "category", loader: registry[base] };
   }
   return null;
 }
@@ -48,8 +64,12 @@ export async function openView(mount, target, context = {}) {
 
   currentId = view.id;
   currentKind = view.kind;
+
+  // Se pasa la ruta completa ("comercios/hilo-y-trapillo") para que la
+  // feature sepa si es la lista o una ficha. `view.id` es solo la base.
   disposeCurrent = await mountFeature(mount, def, {
-    route: view.id,
+    route: String(target).replace(/^#/, ""),
+    base: view.id,
     kind: view.kind,
     category: context.category || view.meta,
     ...context,

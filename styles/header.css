@@ -46,6 +46,45 @@
 }
 
 /* Marca centrada */
+/* Botón regresar: fijo a la izquierda de la barra. Aparece solo dentro de
+   la ficha de un negocio, así el cliente lo alcanza aunque haya bajado
+   hasta el final del menú. */
+.app-header__back {
+  position: absolute;
+  left: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding-bottom: 4px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  font-family: inherit;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.app-header__back[hidden] {
+  display: none;
+}
+
+.app-header__back:hover,
+.app-header__back:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.app-header__back:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
 .brand {
   display: flex;
   align-items: center;

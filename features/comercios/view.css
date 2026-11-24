@@ -1,7 +1,500 @@
 /* ==========================================================================
    All Cancún — Comercios · estilos exclusivos
    Solo se cargan al abrir esta categoría. Ninguna otra vista los usa.
+
+   Prefijo `co-` para no chocar con el shell ni con otras features.
+   Las fotos son de Cloudflare R2: aquí solo se les da forma.
    ========================================================================== */
+
+/* ---------- Lista de negocios ---------- */
+
+.co-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* La tarjeta entera es el enlace: un solo blanco de toque, toda la fila
+   se siente viva. Se ve como tarjeta, no como fila de tabla. */
+.co-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  color: inherit;
+  min-height: var(--tap-min);
+  transition: background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.co-card:hover,
+.co-card:focus-visible {
+  background: var(--color-surface-muted);
+  border-color: var(--fv-accent, var(--color-brand));
+  outline: none;
+}
+
+/* La foto cuadrada a la izquierda. El recorte es fijo para que todas las
+   tarjetas alineen aunque las imágenes vengan de tamaños distintos. */
+.co-card__media {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  display: grid;
+  place-items: center;
+}
+
+.co-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Cuando no hay foto: iniciales, no un hueco gris sin alma. */
+.co-card__ini {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--fv-accent, var(--color-brand));
+  opacity: 0.85;
+}
+
+.co-card__body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.co-card__name {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.co-card__meta {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.co-card__go {
+  flex: 0 0 auto;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+}
+
+.co-mas {
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  min-height: var(--tap-min);
+  text-align: center;
+  display: block;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.co-mas:hover:not(:disabled),
+.co-mas:focus-visible {
+  border-color: var(--fv-accent, var(--color-brand));
+  outline: none;
+}
+
+.co-mas:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* ---------- Estados (cargando / vacío / error) ---------- */
+
+.co-estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.co-estado__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.co-estado__txt {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  max-width: 34ch;
+}
+
+/* Rueda simple: dice "estoy trabajando" sin robar atención. */
+.co-spin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--fv-accent, var(--color-brand));
+  animation: co-giro 700ms linear infinite;
+}
+
+@keyframes co-giro {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Ficha del negocio ---------- */
+
+.co-ficha {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Portada. Si el negocio no subió foto, queda el acento del degradado
+   en vez de un rectángulo negro. */
+.co-hero {
+  position: relative;
+  display: block;
+  height: 200px;
+  margin: 0 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: linear-gradient(
+    150deg,
+    var(--fv-accent, var(--color-brand)) 0%,
+    var(--color-surface-muted) 100%
+  );
+}
+
+.co-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.co-hero__vacio {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(150deg, var(--fv-accent, var(--color-brand)) 0%, transparent 70%);
+  opacity: 0.28;
+}
+
+/* Volver: en todas las vistas ahora vive en la barra de arriba
+   (components/header.js), así se alcanza aunque se haya bajado hasta el
+   final. Se oculta el de la vista para no tener dos botones iguales. */
+.fv-back,
+.co-hero__volver {
+  display: none;
+}
+
+.co-ficha__cab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* El logo se sube sobre la portada: da profundidad y evita que la
+   cabecera sea solo texto apilado. */
+/* La foto de identidad se sube sobre la portada para unir las dos piezas. */
+.co-ficha__logo {
+  position: relative;
+  z-index: 1;
+  width: 72px;
+  height: 72px;
+  margin-top: -52px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 3px solid var(--color-bg);
+  background: var(--color-surface-muted);
+}
+
+.co-ficha__logo--ini {
+  display: grid;
+  place-items: center;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--fv-accent, var(--color-brand));
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.10);
+}
+
+.co-ficha__name {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.co-ficha__meta {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--fv-accent, var(--color-brand));
+}
+
+/* La descripción es lo que convence al cliente: aire arriba y abajo,
+   sin quedar pegada al botón. */
+.co-ficha__desc {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+  max-width: 60ch;
+}
+
+.co-ficha__sinwa,
+.co-ficha__vacio {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+/* El menú arranca con una línea que separa la información del catálogo. */
+.co-menu {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.co-seccion {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Botones ---------- */
+
+.co-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-4);
+  min-height: var(--tap-min);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter var(--duration-fast) var(--ease-out);
+}
+
+/* WhatsApp: el verde de la app. Aquí sí conviene el color ajeno porque
+   el cliente reconoce el botón al instante. */
+.co-btn--wa {
+  background: #25d366;
+  color: #06281a;
+}
+
+.co-btn--wa:hover,
+.co-btn--wa:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.co-btn--bloque {
+  width: 100%;
+  margin-top: var(--space-3);
+  box-sizing: border-box;
+}
+
+/* ---------- Menú ---------- */
+
+.co-menu {
+  margin-top: var(--space-5);
+}
+
+.co-seccion {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.co-prods {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.co-prod {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.co-prod:hover {
+  border-color: var(--fv-accent, var(--color-brand));
+}
+
+.co-prod__media {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+
+.co-prod__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.co-prod__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.co-prod__name {
+  margin: 0 0 2px;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.co-prod__desc {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.co-prod__pie {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.co-prod__precio {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--fv-accent, var(--color-brand));
+}
+
+/* Agotado: visible y tachado. Ocultarlo haría que el cliente preguntara
+   por algo que ya vio; así entiende qué pasó. */
+.co-prod.is-off {
+  opacity: 0.5;
+}
+
+.co-prod.is-off .co-prod__name {
+  text-decoration: line-through;
+}
+
+.co-prod__off {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+/* ---------- Agregar al carrito ---------- */
+
+.co-btn--add {
+  background: var(--fv-accent);
+  color: var(--color-text-on-accent, #fff);
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.co-btn--add:hover,
+.co-btn--add:focus-visible {
+  filter: brightness(1.08);
+  outline: none;
+}
+
+.co-btn--add:disabled {
+  background: var(--fv-soft);
+  color: var(--fv-accent);
+  cursor: default;
+}
+
+.co-btn--off {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border, #e4e2dd);
+}
+
+/* Barra fija abajo con el avance del pedido. Solo aparece al agregar algo,
+   para no estorbar mientras el cliente solo está mirando. */
+.co-barra {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg, 16px);
+  background: var(--color-surface, #fff);
+  box-shadow: 0 -2px 16px rgb(0 0 0 / 0.12);
+}
+
+.co-barra[hidden] {
+  display: none;
+}
+
+.co-barra__txt {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .co-spin { animation-duration: 2s; }
+}
+
+
 
 /* Detalle propio: pista corta de cada paso, a la derecha */
 .com-body .fv-step {

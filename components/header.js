@@ -41,6 +41,10 @@ const escape = (value = "") =>
 export function renderHeader(mount) {
   mount.innerHTML = `
     <header class="app-header" id="app-header">
+      <button type="button" class="app-header__back" id="app-back" hidden
+              aria-label="Regresar">
+        <span aria-hidden="true">‹</span>
+      </button>
       <div class="brand">
         <div class="brand__text">
           <span class="brand__name">All Cancún</span>
@@ -77,7 +81,35 @@ export function renderHeader(mount) {
   `;
 
   initHeaderScrollState(mount);
+  initBackButton(mount);
   return initInstallButton(mount);
+}
+
+/**
+ * Botón "regresar" fijo en la barra de arriba.
+ *
+ * Vive aquí y no dentro de cada vista para que el cliente lo alcance
+ * sin importar cuánto haya bajado. App.js lo muestra u oculta según la
+ * ruta con `setHeaderBack()`.
+ */
+export function setHeaderBack(on, action) {
+  const boton = document.querySelector("#app-back");
+  if (!boton) return;
+
+  boton.hidden = !on;
+  if (!on) return;
+
+  boton.onclick = () => {
+    if (typeof action === "function") action();
+    else window.history.back();
+  };
+}
+
+function initBackButton(mount) {
+  const boton = mount.querySelector("#app-back");
+  if (!boton) return;
+  // Por defecto vuelve a la pantalla anterior.
+  boton.onclick = () => window.history.back();
 }
 
 /* Borde inferior del header al hacer scroll */
