@@ -116,6 +116,8 @@ export default {
 
         <!-- Invitado -->
         <div class="pf-guest" data-pf="guest" ${configured ? "" : "hidden"}>
+          <div class="pf-guest__amb" aria-hidden="true"></div>
+
           <span class="pf-guest__mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor"
                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
