@@ -1334,7 +1334,7 @@ export default {
         const { viaje } = await crearViaje({
           origen,
           destino,
-          precio: precioEl ? Number(String(precioEl.textContent).replace(/[^0-9.]/g, "")) : 0,
+          precio: priceEl ? Number(String(priceEl.textContent).replace(/[^0-9.]/g, "")) : 0,
           notas: null,
         });
 
@@ -1359,12 +1359,12 @@ export default {
           cta.classList.add("is-done");
           label.textContent = "¡Mototaxi asignado!";
 
-          if (precioEl) {
+          if (priceEl) {
             const conductor = fila.conductor_id
               ? (await getConductorPublico(fila.conductor_id)).conductor
               : null;
             const nombre = conductor?.nombre_completo || conductor?.apodo || "Conductor";
-            precioEl.textContent = `${nombre} en camino`;
+            priceEl.textContent = `${nombre} en camino`;
           }
         };
 
@@ -1414,14 +1414,14 @@ export default {
             label.textContent = "¡Mototaxi asignado!";
             if (priceEl) {
               const km = (rider?.startDistance || 1500) / 1000;
-              precioEl_text(km);
+              priceEl_text(km);
             }
           });
         };
         boot();
       }
 
-      function precioEl_text(km) {
+      function priceEl_text(km) {
         if (priceEl) priceEl.textContent = `${Math.max(3, Math.round(km * 2.2) + 2)} min`;
       }
 

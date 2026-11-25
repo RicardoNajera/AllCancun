@@ -60,6 +60,7 @@ export async function crearViaje({
       destino_lat: destino?.lat ?? null,
       destino_lng: destino?.lng ?? null,
       precio_centavos: Math.round(Number(precio || 0) * 100),
+      moneda: "MXN",
       notas: notas ? String(notas).slice(0, 500) : null,
       codigo_abordaje: codigoAbordaje(),
     })
