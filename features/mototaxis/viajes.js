@@ -13,6 +13,19 @@
 
 import { getSupabase } from "../shared/supabase.js";
 
+/**
+ * ¿Están las credenciales de Supabase configuradas?
+ *
+ * Se usa para decidir si se puede caer a la simulación. Si Supabase SÍ
+ * está configurado pero el viaje no se guardó, es un error de verdad y
+ * hay que avisarlo: simular ahí engaña al usuario.
+ */
+export function haySupabase() {
+  return Boolean(
+    window.ALL_CANCUN_SUPABASE_URL && window.ALL_CANCUN_SUPABASE_ANON_KEY
+  );
+}
+
 export const ESTADO = {
   SOLICITADO: "solicitado",
   ACEPTADO: "aceptado",

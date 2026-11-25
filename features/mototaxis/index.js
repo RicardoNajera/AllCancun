@@ -21,6 +21,7 @@ import {
   leerViaje,
   cancelarViaje,
   getConductorPublico,
+  haySupabase,
 } from "./viajes.js";
 
 const motoIcon = `
@@ -1314,13 +1315,15 @@ export default {
         cta.classList.add("is-loading");
         label.textContent = "Buscando tu mototaxi…";
 
-        /* Primero se intenta pedir el viaje de verdad. Si no hay sesión
-           (o Supabase no está configurado), `viaje` viene null y se cae
-           a la simulación de antes: pedir nunca debe romperse. */
+        /* Primero se intenta pedir el viaje de verdad. Si el pedido no se
+           pudo guardar, buscarConductorReal ya mostró el motivo y aquí NO
+           se simula nada: era justo lo que hacía creer que el viaje había
+           llegado al conductor cuando no se había guardado. */
         buscarConductorReal().then((encontrado) => {
           if (encontrado) return;
           if (destroyed) return;
-          simularAsignacion();
+          /* Solo se simula si Supabase no está configurado en absoluto. */
+          if (!haySupabase()) simularAsignacion();
         });
       };
 
@@ -1331,14 +1334,28 @@ export default {
       let respaldoTimer = null;
 
       async function buscarConductorReal() {
-        const { viaje } = await crearViaje({
+        const { viaje, error } = await crearViaje({
           origen,
           destino,
           precio: priceEl ? Number(String(priceEl.textContent).replace(/[^0-9.]/g, "")) : 0,
           notas: null,
         });
 
-        if (!viaje) return false; // sin sesión o sin Supabase → modo demo
+        if (!viaje) {
+          /* Antes esto caía a la simulación en silencio, y el usuario veía
+             "conductor en camino" creyendo que el pedido llegó al conductor
+             cuando en realidad no se guardó nada. Ahora se avisa. */
+          console.warn("[mototaxis] no se pudo crear el viaje:", error || "sin sesión");
+          setError(
+            error
+              ? "No pudimos enviar tu viaje. Revisa tu conexión e inténtalo otra vez."
+              : "Inicia sesión para que tu viaje llegue a un conductor de verdad."
+          );
+          cta.classList.remove("is-loading");
+          const labelCta = cta.querySelector("span");
+          if (labelCta) labelCta.textContent = "Pedir mototaxi";
+          return false;
+        }
 
         viajeId = viaje.id;
 
