@@ -15,6 +15,13 @@ import {
   formatDistance,
   formatDuration,
 } from "./map.js";
+import {
+  crearViaje,
+  esperarConductor,
+  leerViaje,
+  cancelarViaje,
+  getConductorPublico,
+} from "./viajes.js";
 
 const motoIcon = `
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -1307,6 +1314,74 @@ export default {
         cta.classList.add("is-loading");
         label.textContent = "Buscando tu mototaxi…";
 
+        /* Primero se intenta pedir el viaje de verdad. Si no hay sesión
+           (o Supabase no está configurado), `viaje` viene null y se cae
+           a la simulación de antes: pedir nunca debe romperse. */
+        buscarConductorReal().then((encontrado) => {
+          if (encontrado) return;
+          if (destroyed) return;
+          simularAsignacion();
+        });
+      };
+
+      /* ---------- Pedido real contra Supabase ---------- */
+
+      let viajeId = null;
+      let cerrarEscucha = null;
+      let respaldoTimer = null;
+
+      async function buscarConductorReal() {
+        const { viaje } = await crearViaje({
+          origen,
+          destino,
+          precio: precioEl ? Number(String(precioEl.textContent).replace(/[^0-9.]/g, "")) : 0,
+          notas: null,
+        });
+
+        if (!viaje) return false; // sin sesión o sin Supabase → modo demo
+
+        viajeId = viaje.id;
+
+        const terminarEspera = () => {
+          if (cerrarEscucha) cerrarEscucha();
+          if (respaldoTimer) clearInterval(respaldoTimer);
+          cerrarEscucha = null;
+          respaldoTimer = null;
+        };
+
+        const aplicar = async (fila) => {
+          if (!fila || fila.estado === "solicitado") return;
+
+          terminarEspera();
+          if (destroyed) return;
+
+          cta.classList.remove("is-loading");
+          cta.classList.add("is-done");
+          label.textContent = "¡Mototaxi asignado!";
+
+          if (precioEl) {
+            const conductor = fila.conductor_id
+              ? (await getConductorPublico(fila.conductor_id)).conductor
+              : null;
+            const nombre = conductor?.nombre_completo || conductor?.apodo || "Conductor";
+            precioEl.textContent = `${nombre} en camino`;
+          }
+        };
+
+        cerrarEscucha = await esperarConductor(viaje.id, aplicar);
+
+        /* Respaldo por si Realtime no está activado en la tabla. */
+        respaldoTimer = setInterval(async () => {
+          const { viaje: actual } = await leerViaje(viajeId);
+          if (actual && actual.estado !== "solicitado") aplicar(actual);
+        }, 4000);
+
+        return true;
+      }
+
+      /* ---------- Simulación (sin sesión) ---------- */
+
+      function simularAsignacion() {
         /* Simulación: las motos circulan por calles reales a 1.5–4 km.
            Se van renovando solas; la más cercana viene hacia ti. */
         const near = { lat: origin.lat, lng: origin.lng };
@@ -1339,12 +1414,16 @@ export default {
             label.textContent = "¡Mototaxi asignado!";
             if (priceEl) {
               const km = (rider?.startDistance || 1500) / 1000;
-              priceEl.textContent = `${Math.max(3, Math.round(km * 2.2) + 2)} min`;
+              precioEl_text(km);
             }
           });
         };
         boot();
-      };
+      }
+
+      function precioEl_text(km) {
+        if (priceEl) priceEl.textContent = `${Math.max(3, Math.round(km * 2.2) + 2)} min`;
+      }
 
       /* ---------- Botón de mapa: centrar en mi ubicación ---------- */
       const onLocate = () => detectLocation();
